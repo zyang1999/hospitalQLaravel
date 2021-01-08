@@ -16,41 +16,52 @@ class UserController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->messages());
+            return response()->json([
+                'success' =>false,
+                'type' => 'validation',
+                'message' =>$validator->messages()]);
         }else{
             $user = User::where('email', $request->email)->first();
 
             if (! $user || ! Hash::check($request->password, $user->password)) {
                 return response()->json([
                     'success' => false,
+                    'type' => 'invalid',
                     'message' => 'Incorrect email address or password, please try again.'
                 ]);
             }
             $token = $user->createToken($request->email)->plainTextToken;
             return response()->json([
                 'success' => true,
-                'user' => $user,
+                'user' => $request->user,
                 'token' => $token
                 ]);
-        }
-
-        
+        }      
     }
 
     public function register(Request $request){
         $validator = Validator::make($request->all(), [
-            'email' => 'required|unique:users',
-            'password' => 'required|confirmed'
+            'email' => 'required|unique:users|email',
+            'password' => 'required|confirmed',
+            'password_confirmation' => 'required'
         ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->messages());
+            return response()->json([
+                'success' =>false,
+                'type' => 'validation',
+                'message' =>$validator->messages()]);
         }else{
             $newUser = new User;
             $newUser->email = $request->email;
             $newUser->password = Hash::make($request->password);
+            $newUser->role = $request->role;
             $newUser->save();
             
+            return response()->json([
+                'success' => true,
+                'message' => $newUser               
+            ]);
         }
     }
 }
