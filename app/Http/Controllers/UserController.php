@@ -33,7 +33,7 @@ class UserController extends Controller
             $token = $user->createToken($request->email)->plainTextToken;
             return response()->json([
                 'success' => true,
-                'user' => $request->user,
+                'role' => $user->role,
                 'token' => $token
                 ]);
         }      
@@ -58,9 +58,12 @@ class UserController extends Controller
             $newUser->role = $request->role;
             $newUser->save();
             
+            $token = $newUser->createToken($request->email)->plainTextToken;
+
             return response()->json([
                 'success' => true,
-                'message' => $newUser               
+                'role' => $newUser->role,
+                'token' => $token               
             ]);
         }
     }

@@ -19,6 +19,7 @@ class CreateQueuesTable extends Migration
             $table->integer('user_id');
             $table->string('status');
             $table->string('location');
+            $table->string('served_by')->nullable();
             $table->timestamps();
         });
     }

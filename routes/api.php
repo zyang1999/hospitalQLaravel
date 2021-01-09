@@ -25,5 +25,7 @@ Route::post('/register', [UserController::class, 'register']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/joinQueue', [QueueController::class, 'joinQueue']);
     Route::get('/getUserQueue', [QueueController::class, 'getUserQueue']);
+    Route::get('/getAllQueue', [QueueController::class, 'getAllQueue']);
+    Route::get('/getCurrentPatient', [QueueController::class, 'getCurrentPatient']);
 });
 

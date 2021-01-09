@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Queue;
 use App\Models\User;
+use Carbon\Carbon;
 
 class QueueController extends Controller
 {
@@ -14,7 +15,7 @@ class QueueController extends Controller
         $queue_no = (int)Queue::where('location', $request->location)->max('queue_no') + 1;
         $queue->queue_no = sprintf("%04d", $queue_no);
         $queue->status = "WAITING";
-        $queue->location = "OUTPATIENT";
+        $queue->location = $request->location;
 
         $request->user()->queues()->save($queue);
 
@@ -57,18 +58,46 @@ class QueueController extends Controller
     public function getUserQueue(Request $request){
         return response()->json([
             'user' => $request->user(),
-            'userQueue' => $request->user()->queues()->latest()->first()
+            'userQueue' => $request->user()->queues()->where('status', 'WAITING')->latest()->first()
         ]);      
     }
 
     public function getAllQueue(Request $request){
-        $allQueue = Queue::where('location', 'CONSULTATION')
+        $role = $request->user()->role;
+
+        if($role == 'patient'){
+            $location = 'CONSULTATION';
+        }else if($role == 'PHARMACIST'){
+            $location = 'PHARMACY';
+        }
+
+        $allQueue = Queue::where('location', $location)
             ->where('status', 'SERVING')
             ->orWhere('status', 'WAITING')
-            ->where('created_at', Carbon::today())
+            ->whereDate('created_at', Carbon::today())
             ->get();
         return response()->json([
-            'queue' => $allQueue
+            'queue' => $allQueue,
+            'patient' => $allQueue->where('status', 'WAITING')->first()->user
+        ]);
+    }
+
+    public function getCurrentPatient(Request $request){
+        $role = $request->user()->role;
+        
+        if($role == 'DOCTOR'){
+            $location = 'CONSULTATION';
+        }else if($role == 'PHARMACIST'){
+            $location = 'PHARMACY';
+        }
+
+        $currentPatient = Queue::where('status', 'SERVING')
+            ->where('location', $location)
+            ->where('doctor_id', $request->user()->id)
+            ->first();
+
+        return response()->json([
+            'currentPatient' => $currentPatient
         ]);
     }
 }
