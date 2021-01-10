@@ -65,7 +65,7 @@ class QueueController extends Controller
     public function getAllQueue(Request $request){
         $role = $request->user()->role;
 
-        if($role == 'patient'){
+        if($role == 'DOCTOR'){
             $location = 'CONSULTATION';
         }else if($role == 'PHARMACIST'){
             $location = 'PHARMACY';
@@ -76,9 +76,18 @@ class QueueController extends Controller
             ->orWhere('status', 'WAITING')
             ->whereDate('created_at', Carbon::today())
             ->get();
+
+        $currentQueue = Queue::where('location', $location)
+            ->where('status', 'SERVING')
+            ->where('doctor_id', $request->user()->id)
+            ->with('user')
+            // ->whereDate('created_at', Carbon::today())
+            ->first();
+        
+
         return response()->json([
-            'queue' => $allQueue,
-            'patient' => $allQueue->where('status', 'WAITING')->first()->user
+            'allQueue' => $allQueue,
+            'currentQueue' => $currentQueue
         ]);
     }
 
