@@ -46,4 +46,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Queue::class);
     }
+
+    public function office()
+    {
+        return $this->hasOne(Office::class);
+    }
 }

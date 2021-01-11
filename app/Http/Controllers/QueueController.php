@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Queue;
 use App\Models\User;
+use App\Models\Office;
 use Carbon\Carbon;
 
 class QueueController extends Controller
@@ -25,40 +26,66 @@ class QueueController extends Controller
     }
 
     public function updateQueue(Request $request)
-    {
+    {   
+        $prevQueue = null;
 
-        $response = [];
+        $role = $request->user()->role;
 
-        $prevQueue = Queue::find($request->queue_id);
-        $prevQueue->status = "COMPLETED";
-        $prevQueue->save();
+        if($request->queue_id){
+            $prevQueue = Queue::find($request->queue_id);
+            $prevQueue->status = "COMPLETED";
+            $prevQueue->save();
+            if($role = 'DOCTOR'){
+                $queue = new Queue;
+                $queue_no = (int)Queue::where('location', 'PHARMACY')->max('queue_no') + 1;
+                $queue->queue_no = sprintf("%04d", $queue_no);
+                $queue->status = "WAITING";
+                $queue->location = 'PHARMACY';
+                $queue->user_id = $prevQueue->user_id;
+                $queue->save();
+            }          
+        }
 
-        $nextQueue = Queue::where('queue_no', $prevQueue->queue_no + 1);
+        if($role == 'DOCTOR'){
+            $location = 'CONSULTATION';
+        }else{
+            $location = 'PHARMACY';
+        }
+
+        $nextQueue = Queue::where('status','WAITING')->where('location', $location)->first();
         if ($nextQueue) {
             $nextQueue->status = "SERVING";
+            $nextQueue->served_by = $request->user()->id; 
             $user = User::find($request->user_id);
-            if ($user->role == 'DOCTOR') {
-                $room_no = $user->doctor()->room_no;
-            } else {
-                $counter_no = $user->pharmacist()->counter_no;
-            }
-
+            $nextQueue->served_at = $request->user()->office->office_no;
             $nextQueue->save();
         }
 
         return response()->json([
-            'success' => true,
             'prev_queue' => $prevQueue,
             'next_queue' => $nextQueue,
-            'room_no' => $room_no,
-            'counter_no' => $counter_no
+            
         ]);
     }
 
     public function getUserQueue(Request $request){
+        
+        $allQueue = null;
+
+        $userQueue = $request->user()->queues()->where('status', 'WAITING')->orwhere('status', 'SERVING')->latest()->first();
+        
+        if($userQueue){
+            $allQueue = Queue::where('location', $request->location)
+            ->where('status', 'SERVING')
+            ->orWhere('status', 'WAITING')
+            ->whereDate('created_at', Carbon::today())
+            ->get();
+        }
+        
         return response()->json([
             'user' => $request->user(),
-            'userQueue' => $request->user()->queues()->where('status', 'WAITING')->latest()->first()
+            'userQueue' => $userQueue,
+            'allQueue' => $allQueue
         ]);      
     }
 
@@ -69,21 +96,23 @@ class QueueController extends Controller
             $location = 'CONSULTATION';
         }else if($role == 'PHARMACIST'){
             $location = 'PHARMACY';
+        }else{
+            $location = $request->user()->queues()->where('status', 'WAITING')->latest()->first()->location;
         }
 
         $allQueue = Queue::where('location', $location)
             ->where('status', 'SERVING')
             ->orWhere('status', 'WAITING')
             ->whereDate('created_at', Carbon::today())
+            ->take(4)
             ->get();
 
         $currentQueue = Queue::where('location', $location)
             ->where('status', 'SERVING')
-            ->where('doctor_id', $request->user()->id)
+            ->where('served_by', $request->user()->id)
             ->with('user')
-            // ->whereDate('created_at', Carbon::today())
-            ->first();
-        
+            ->whereDate('created_at', Carbon::today())
+            ->first();    
 
         return response()->json([
             'allQueue' => $allQueue,

@@ -26,6 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/joinQueue', [QueueController::class, 'joinQueue']);
     Route::get('/getUserQueue', [QueueController::class, 'getUserQueue']);
     Route::get('/getAllQueue', [QueueController::class, 'getAllQueue']);
+    Route::post('/updateQueue', [QueueController::class, 'updateQueue']);
     Route::get('/getCurrentPatient', [QueueController::class, 'getCurrentPatient']);
 });
 
