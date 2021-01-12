@@ -67,4 +67,10 @@ class UserController extends Controller
             ]);
         }
     }
+
+    public function getUser(Request $request){
+        return response()->json([
+            'user' => $request->user()
+        ]);
+    }
 }

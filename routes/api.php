@@ -23,6 +23,9 @@ use App\Http\Controllers\QueueController;
 Route::post('/login', [UserController::class, 'login']);
 Route::post('/register', [UserController::class, 'register']);
 Route::middleware('auth:sanctum')->group(function () {
+
+    Route::get('/getUser', [UserController::class, 'getUser']);
+
     Route::post('/joinQueue', [QueueController::class, 'joinQueue']);
     Route::get('/getUserQueue', [QueueController::class, 'getUserQueue']);
     Route::get('/getAllQueue', [QueueController::class, 'getAllQueue']);
