@@ -74,18 +74,19 @@ class QueueController extends Controller
 
         $userQueue = $request->user()->queues()->where('status', 'WAITING')->orwhere('status', 'SERVING')->latest()->first();
         
-        if($userQueue){
-            $allQueue = Queue::where('location', $request->location)
-            ->where('status', 'SERVING')
-            ->orWhere('status', 'WAITING')
-            ->whereDate('created_at', Carbon::today())
-            ->get();
-        }
+        $allQueue = Queue::where('location', $request->location)
+        ->where('status', 'SERVING')
+        ->orWhere('status', 'WAITING')
+        ->whereDate('created_at', Carbon::today())
+        ->get();
+
+        $patientWaiting = $allQueue->count();
         
         return response()->json([
             'user' => $request->user(),
             'userQueue' => $userQueue,
-            'allQueue' => $allQueue
+            'allQueue' => $allQueue,
+            'patientWaiting' => $patientWaiting
         ]);      
     }
 

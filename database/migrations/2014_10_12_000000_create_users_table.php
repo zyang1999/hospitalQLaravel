@@ -23,7 +23,9 @@ class CreateUsersTable extends Migration
             $table->string('password');
             $table->string('status')->default('UNVERIFIED');
             $table->string('gender')->nullable();
-            $table->integer('telephone')->nullable();
+            $table->longtext('IC_image')->nullable();
+            $table->longtext('selfie')->nullable();
+            $table->string('telephone')->nullable();
             $table->string('role');
             $table->rememberToken();
             $table->timestamps();

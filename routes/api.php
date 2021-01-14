@@ -25,6 +25,8 @@ Route::post('/register', [UserController::class, 'register']);
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/getUser', [UserController::class, 'getUser']);
+    Route::post('/storeVerificationCredential', [UserController::class, 'storeVerificationCredential']);
+    Route::post('/storeSelfie', [UserController::class, 'storeSelfie']);
 
     Route::post('/joinQueue', [QueueController::class, 'joinQueue']);
     Route::get('/getUserQueue', [QueueController::class, 'getUserQueue']);

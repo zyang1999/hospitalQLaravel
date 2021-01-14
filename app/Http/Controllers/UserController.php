@@ -62,7 +62,7 @@ class UserController extends Controller
 
             return response()->json([
                 'success' => true,
-                'role' => $newUser->role,
+                'user' => $newUser,
                 'token' => $token               
             ]);
         }
@@ -73,4 +73,74 @@ class UserController extends Controller
             'user' => $request->user()
         ]);
     }
+
+    public function storeVerificationCredential(Request $request){
+        
+        $user = $request->user();
+
+        $message = [
+            'IC_no.required' => 'The IC Number field is required.',
+            'IC_image.required' => 'The IC Image is required.' 
+        ];
+        
+        $validator = Validator::make($request->all(), [
+            'first_name' => 'required',
+            'last_name' => 'required',
+            'telephone' => 'required',
+            'gender' => 'required',
+            'IC_no' => 'required',
+            'IC_image' => 'required',
+        ], $message);
+
+        if($validator->fails()){
+            return response()->json([
+                'success' => false,
+                'message' => $validator->messages()
+            ]);
+        }else{
+        
+            $user->first_name = $request->first_name;
+            $user->last_name = $request->last_name;
+            $user->telephone = $request->telephone;
+            $user->gender = $request->gender;
+            $user->IC_no = $request->IC_no;
+            $user->IC_image = $request->IC_image;
+
+            $user->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Credential are waiting to be verified.'    
+            ]);
+        }
+    }
+
+    public function storeSelfie(Request $request){
+        $user = $request->user();
+        $message = [
+            'selfie.required' => 'Please take a photo of yourself.'
+        ];
+
+        $validator = Validator::make($request->all(),[
+            'selfie' => 'required',
+            'status' => 'required'
+        ], $message);     
+
+        if($validator->fails()){
+            return response()->json([
+                'success' => false,
+                'message' => $validator->messages()
+            ]);
+        }else{
+            $user->selfie = $request->selfie;
+            $user->status = $request->status;
+            $user->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Credential are waiting to be verified.'
+            ]);
+        }
+    }
 }
+
