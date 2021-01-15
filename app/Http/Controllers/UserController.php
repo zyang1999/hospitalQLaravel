@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 
 class UserController extends Controller
@@ -98,13 +99,16 @@ class UserController extends Controller
                 'message' => $validator->messages()
             ]);
         }else{
+            $IC_image = base64_decode($request->IC_image);
+            $imageDirectory = date('mdYHis') . uniqid(). '.png';
+            Storage::put(('images/'.$imageDirectory) , $IC_image);
         
             $user->first_name = $request->first_name;
             $user->last_name = $request->last_name;
             $user->telephone = $request->telephone;
             $user->gender = $request->gender;
             $user->IC_no = $request->IC_no;
-            $user->IC_image = $request->IC_image;
+            $user->IC_image = $IC_image;
 
             $user->save();
 
@@ -132,7 +136,11 @@ class UserController extends Controller
                 'message' => $validator->messages()
             ]);
         }else{
-            $user->selfie = $request->selfie;
+            $selfie = base64_decode($request->selfie);
+            $imageDirectory = date('mdYHis') . uniqid(). '.png';
+            Storage::put(('images/'.$imageDirectory) , $selfie);
+            
+            $user->selfie = $imageDirectory;   
             $user->status = $request->status;
             $user->save();
 
