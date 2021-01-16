@@ -12,7 +12,7 @@ class UserController extends Controller
 {
     public function login(Request $request){
         $validator = Validator::make($request->all(), [
-            'email' => 'required',
+            'email' => 'required|email',
             'password' => 'required'
         ]);
 
@@ -100,15 +100,15 @@ class UserController extends Controller
             ]);
         }else{
             $IC_image = base64_decode($request->IC_image);
-            $imageDirectory = date('mdYHis') . uniqid(). '.png';
-            Storage::put(('images/'.$imageDirectory) , $IC_image);
+            $imageDirectory = 'images/' . date('mdYHis') . uniqid(). '.png';
+            Storage::put($imageDirectory , $IC_image);
         
             $user->first_name = $request->first_name;
             $user->last_name = $request->last_name;
             $user->telephone = $request->telephone;
             $user->gender = $request->gender;
             $user->IC_no = $request->IC_no;
-            $user->IC_image = $IC_image;
+            $user->IC_image = $imageDirectory;
 
             $user->save();
 
@@ -137,8 +137,8 @@ class UserController extends Controller
             ]);
         }else{
             $selfie = base64_decode($request->selfie);
-            $imageDirectory = date('mdYHis') . uniqid(). '.png';
-            Storage::put(('images/'.$imageDirectory) , $selfie);
+            $imageDirectory = 'images/' . date('mdYHis') . uniqid(). '.png';
+            Storage::put($imageDirectory, $selfie);
             
             $user->selfie = $imageDirectory;   
             $user->status = $request->status;
