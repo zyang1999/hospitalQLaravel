@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Queue;
 use App\Models\User;
 use App\Models\Office;
+use App\Models\Reason;
 use Carbon\Carbon;
 
 class QueueController extends Controller
@@ -137,6 +138,23 @@ class QueueController extends Controller
 
         return response()->json([
             'currentPatient' => $currentPatient
+        ]);
+    }
+
+    public function cancelQueue(Request $request){
+        $queueId = $request->queueId;
+
+        $queue = Queue::find($queueId);
+        $queue->status = 'CANCELLED';
+        $queue->save();
+
+        $reason = new Reason;
+        $reason->reason = $request->reason;
+        $queue->reason()->save($reason);
+
+        return response()->json([
+            'queue' => $queue,
+            'reason' => $reason
         ]);
     }
 }
