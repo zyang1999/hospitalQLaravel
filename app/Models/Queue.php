@@ -9,9 +9,19 @@ class Queue extends Model
 {
     use HasFactory;
 
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        return $date->format('d-m-Y h:i A');
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function served_by()
+    {
+        return $this->belongsTo(User::class, 'served_by');
     }
 
     public function reason()

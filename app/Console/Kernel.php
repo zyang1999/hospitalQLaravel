@@ -4,6 +4,8 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use Illuminate\Support\Facades\DB;
+use App\Models\Reason;
 
 class Kernel extends ConsoleKernel
 {
@@ -24,6 +26,13 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
+        $schedule->call(function () {
+            $reason = new Reason;
+        $reason->reason = "asd";
+        $reason->queue_id = 1;
+        $reason->save();
+        })->everyMinute();
+        
         // $schedule->command('inspire')->hourly();
     }
 

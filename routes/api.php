@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\QueueController;
+use App\Http\Controllers\FeedbackController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,6 +35,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/updateQueue', [QueueController::class, 'updateQueue']);
     Route::get('/getCurrentPatient', [QueueController::class, 'getCurrentPatient']);
     Route::post('/cancelQueue', [QueueController::class, 'cancelQueue']);
+    Route::get('/getQueueHistory', [QueueController::class, 'getQueueHistory']);
     
+    Route::post('storeFeedback', [FeedbackController::class, 'storeFeedback']);
 });
 
