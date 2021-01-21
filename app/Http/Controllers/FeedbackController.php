@@ -23,8 +23,6 @@ class FeedbackController extends Controller
             ];
         }else{
             $queue = Queue::find($request->queueId);
-            $queue->status = 'CANCELLED';
-            $queue->save();
 
             $reason = new Reason;
             $reason->reason = $request->feedback;
