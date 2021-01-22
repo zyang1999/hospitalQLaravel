@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\QueueController;
 use App\Http\Controllers\FeedbackController;
+use App\Http\Controllers\SpecialtyController;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,5 +39,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/getQueueHistory', [QueueController::class, 'getQueueHistory']);
     
     Route::post('storeFeedback', [FeedbackController::class, 'storeFeedback']);
+    Route::get('getSpecialties', [SpecialtyController::class, 'getSpecialties']);
+    
 });
+Route::get('getDoctorList', [UserController::class, 'getDoctorList']);
 

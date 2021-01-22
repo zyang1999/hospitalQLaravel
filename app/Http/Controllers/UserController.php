@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use App\Models\User;
+use App\Models\Specialty;
 
 class UserController extends Controller
 {
@@ -156,5 +157,20 @@ class UserController extends Controller
                 'message' => 'Credential are waiting to be verified.'
             ]);
         }
+    }
+
+    public function getDoctorList(Request $request){
+
+        $doctors = User::where('role', 'DOCTOR')->get(); 
+
+        if($request->specialty != 'All'){
+            $doctors = User::whereHas('specialties', function($q) {
+                $q->where('specialty', 'Family Physician');
+            })->get();
+        }
+
+        return response()->json([
+            'doctors' => $doctors
+        ]);
     }
 }
