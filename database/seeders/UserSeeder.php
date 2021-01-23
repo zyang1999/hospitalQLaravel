@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\User;
+use App\Models\Appointment;
 
 class UserSeeder extends Seeder
 {
@@ -16,6 +17,7 @@ class UserSeeder extends Seeder
     {
         User::factory()
             ->count(10)
+            ->has(Appointment::factory()->count(3))
             ->create();
     }
 }
