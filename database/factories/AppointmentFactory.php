@@ -24,6 +24,7 @@ class AppointmentFactory extends Factory
         return [
             'date' => $this->faker->date,
             'duration' => $this->faker->time,
+            'location' => 'Room 2',
             'status' => 'AVAILABLE'
         ];
     }

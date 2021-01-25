@@ -42,8 +42,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('storeFeedback', [FeedbackController::class, 'storeFeedback']);
     Route::post('getSpecialties', [SpecialtyController::class, 'getSpecialties']);
     Route::post('getDoctorList', [UserController::class, 'getDoctorList']);
+    Route::get('getAvailableDate', [AppointmentController::class, 'getAvailableDate']);
+    Route::post('getSchedule', [AppointmentController::class, 'getSchedule']);
+    Route::post('bookAppointment',[AppointmentController::class, 'bookAppointment']);
+    Route::get('getAppointment', [AppointmentController::class, 'getAppointment']);
     
-   
 });
 
-Route::get('getAppointments', [AppointmentController::class, 'getAppointments']);
