@@ -22,8 +22,9 @@ class AppointmentFactory extends Factory
     public function definition()
     {
         return [
-            'date' => $this->faker->date,
-            'duration' => $this->faker->time,
+            'date' => $this->faker->dateTimeBetween('now', '+1 month'),
+            'start_at' => $this->faker->time,
+            'end_at' => $this->faker->time,
             'location' => 'Room 2',
             'status' => 'AVAILABLE'
         ];

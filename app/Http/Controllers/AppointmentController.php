@@ -12,7 +12,9 @@ class AppointmentController extends Controller
     }
 
     public function getAvailableDate(Request $request){
-        $appointments = Appointment::where('doctor_id', 19)->pluck('date');
+        $appointments = Appointment::where('doctor_id', $request->doctorId)
+            ->whereDate('date', '>' , Carbon::today())
+            ->pluck('date');
         
         return response()->json([
             'appointments' => $appointments

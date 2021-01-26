@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\User;
 use App\Models\Appointment;
+use App\Models\Specialty;
 
 class UserSeeder extends Seeder
 {
@@ -15,9 +16,15 @@ class UserSeeder extends Seeder
      */
     public function run()
     {
-        User::factory()
+         $users = User::factory()
             ->count(10)
-            ->has(Appointment::factory()->count(3))
             ->create();
+
+        foreach ($users as $user) {
+            if( $user->role == 'DOCTOR'){
+                Specialty::factory()->count(1)->for($user)->create();
+                Appointment::factory()->count(3)->for($user)->create();
+            }
+        }   
     }
 }

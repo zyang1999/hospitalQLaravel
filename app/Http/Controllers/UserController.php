@@ -164,7 +164,7 @@ class UserController extends Controller
         $doctors = User::where('role', 'DOCTOR')->get(); 
 
         if($request->specialtyId != 'All'){
-            $doctors = Specialty::find($request->specialtyId)->users()->get();
+            $doctors = Specialty::find($request->specialtyId)->user()->get();
         }
 
         return response()->json([

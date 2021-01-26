@@ -53,8 +53,8 @@ class User extends Authenticatable
         return $this->hasOne(Office::class);
     }
 
-    public function specialties(){
-        return $this->belongsToMany(Specialty::class, 'doctors');
+    public function specialty(){
+        return $this->hasOne(Specialty::class, 'doctor_id');
     }
 
     public function appointments(){
