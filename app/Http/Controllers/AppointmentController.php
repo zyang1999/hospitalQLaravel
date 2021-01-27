@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Appointment;
+use Carbon\Carbon;
 
 class AppointmentController extends Controller
 {
@@ -22,7 +23,7 @@ class AppointmentController extends Controller
     }
 
     public function getSchedule(Request $request){
-        $scheuldes = Appointment::where('doctor_id', 19)->where('date', $request->date)->get();
+        $scheuldes = Appointment::where('doctor_id', $request->doctorId)->where('date', $request->date)->get();
 
         return response()->json([
             'schedules' => $scheuldes
@@ -41,8 +42,16 @@ class AppointmentController extends Controller
     }
 
     public function getAppointment (Request $request){
+        $appointments = $request->user()->appointments()->where('status', 'BOOKED')->oldest('date')->get()->load(['user.specialty']);
+        $appointmentToday = $request->user()->appointments()->where('status', 'BOOKED')->whereDate('date', Carbon::today())->first();
+        
+        if($appointmentToday){
+            $appointmentToday = $appointmentToday->load(['user.specialty']);
+        }
+        
         return response()->json([
-            'appointments' => $request->user()->appointments->load(['user.specialties'])
+            'appointmentToday' => $appointmentToday,
+            'appointments' => $appointments
         ]);
     }
 }
