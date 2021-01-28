@@ -38,6 +38,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/getCurrentPatient', [QueueController::class, 'getCurrentPatient']);
     Route::post('/cancelQueue', [QueueController::class, 'cancelQueue']);
     Route::get('/getQueueHistory', [QueueController::class, 'getQueueHistory']);
+    Route::post('/getAverageWaitingTime', [QueueController::class, 'getAverageWaitingTime']);
     
     Route::post('storeFeedback', [FeedbackController::class, 'storeFeedback']);
     Route::post('getSpecialties', [SpecialtyController::class, 'getSpecialties']);

@@ -14,10 +14,10 @@ class QueueController extends Controller
     public function joinQueue(Request $request)
     {
         $queue = new Queue;
-        $queue_no = (int)Queue::where('location', $request->location)->max('queue_no') + 1;
+        $queue_no = (int)Queue::where('location', $request->specialty)->max('queue_no') + 1;
         $queue->queue_no = sprintf("%04d", $queue_no);
         $queue->status = "WAITING";
-        $queue->location = $request->location;
+        $queue->location = $request->specialty;
 
         $request->user()->queues()->save($queue);
 
@@ -75,20 +75,13 @@ class QueueController extends Controller
         $allQueue = null;
 
         $userQueue = $request->user()->queues()->where('status', 'WAITING')->orwhere('status', 'SERVING')->latest()->first();
-
-        $allQueue = Queue::where('location', $request->location)
-            ->where('status', 'SERVING')
-            ->orWhere('status', 'WAITING')
-            ->whereDate('created_at', Carbon::today())
-            ->get();
-
-        $patientWaiting = $allQueue->count();
+    
+        $profileImage = base64_encode(file_get_contents($request->user()->selfie));
 
         return response()->json([
             'user' => $request->user(),
-            'userQueue' => $userQueue,
-            'allQueue' => $allQueue,
-            'patientWaiting' => $patientWaiting
+            'profileImage' => $profileImage,
+            'userQueue' => $userQueue
         ]);
     }
 
@@ -120,8 +113,22 @@ class QueueController extends Controller
 
         return response()->json([
             'allQueue' => $allQueue,
-            'currentQueue' => $currentQueue
+            'currentQueue' => $currentQueue,
         ]);
+    }
+
+    public function getAverageWaitingTime(Request $request){
+        $queue = Queue::where('location', $request->specialty)->where('status', 'WAITING')->get();
+        $numberOfPatients = $queue->count();
+        $averageWaitingTime = $queue->avg('waiting_time');
+        $totalWaitingSeconds = $numberOfPatients * $averageWaitingTime * 60;
+        $currentTime = Carbon::now();
+        $extimatedServedAt = $currentTime->addSeconds($totalWaitingSeconds);
+        $timeRange = $extimatedServedAt->format('h:i A'). ' - ' . $extimatedServedAt->addMinutes(15)->format('h:i A');
+        return response()->json([
+            'timeRange' => $timeRange
+        ]);
+
     }
 
     public function getCurrentPatient(Request $request)
