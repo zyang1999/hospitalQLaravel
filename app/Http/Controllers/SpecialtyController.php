@@ -9,10 +9,14 @@ use App\Models\User;
 class SpecialtyController extends Controller
 {
     public function getSpecialties(Request $request){
-        $specialties = Specialty::all();
-
-        if($request->doctorId != 'All'){
-            $specialties = User::find($request->doctorId)->specialty()->get();
+        
+        if($request->user()->specialties){
+            $specialties = $request->user()->specialties;
+        }else {
+            $specialties = Specialty::all();
+            if($request->doctorId != 'All'){
+                $specialties = User::find($request->doctorId)->specialties()->get();
+            }
         }
 
         return response()->json([

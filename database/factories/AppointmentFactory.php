@@ -25,6 +25,7 @@ class AppointmentFactory extends Factory
             'date' => $this->faker->dateTimeBetween('now', '+1 month'),
             'start_at' => $this->faker->time,
             'end_at' => $this->faker->time,
+            'specialty' => 'Family Physician',
             'location' => 'Room 2',
             'status' => 'AVAILABLE'
         ];

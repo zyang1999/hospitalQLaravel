@@ -12,6 +12,14 @@ class AppointmentController extends Controller
 
     }
 
+    public function getDoctorAppointments(Request $request){
+        $allAppointments = $request->user()->doctorAppointments->load(['patient'])->groupBy('date');
+        
+        return response()->json([
+            'allAppointments' => $allAppointments
+        ]);
+    }
+
     public function getAvailableDate(Request $request){
         $appointments = Appointment::where('doctor_id', $request->doctorId)
             ->whereDate('date', '>' , Carbon::today())

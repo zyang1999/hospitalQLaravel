@@ -18,10 +18,10 @@ class CreateQueuesTable extends Migration
             $table->string('queue_no');
             $table->integer('user_id');
             $table->string('status');
-            $table->string('location');
+            $table->string('specialty');
             $table->integer('waiting_time')->nullable();
             $table->string('served_by')->nullable();
-            $table->string('served_at')->nullable();
+            $table->string('location')->nullable();
             $table->timestamps();
         });
     }

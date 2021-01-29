@@ -18,6 +18,7 @@ class QueueController extends Controller
         $queue->queue_no = sprintf("%04d", $queue_no);
         $queue->status = "WAITING";
         $queue->location = $request->specialty;
+        $queue->specialty = $request->specialty;
 
         $request->user()->queues()->save($queue);
 
@@ -58,7 +59,7 @@ class QueueController extends Controller
             $nextQueue->status = "SERVING";
             $nextQueue->served_by = $request->user()->id;
             $user = User::find($request->user_id);
-            $nextQueue->served_at = $request->user()->office->office_no;
+            $nextQueue->location = $request->user()->office->office_no;
             $nextQueue->save();
         }
 
