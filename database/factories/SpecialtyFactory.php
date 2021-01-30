@@ -32,7 +32,8 @@ class SpecialtyFactory extends Factory
                 'Ophthalmologist',
                 'Neurologist',
                 'Radiologist'
-                ))
+            )),
+            'location' => 'ROOM 2'
         ];
     }
 }

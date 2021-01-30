@@ -17,6 +17,7 @@ class CreateSpecialtiesTable extends Migration
             $table->id();
             $table->string('doctor_id');
             $table->string('specialty');
+            $table->string('location');
             $table->timestamps();
         });
     }
