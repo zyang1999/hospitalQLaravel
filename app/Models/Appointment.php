@@ -21,7 +21,15 @@ class Appointment extends Model
         return $this->belongsTo(User::class, 'patient_id');
     }
 
+    public function reason()
+    {
+        return $this->hasOne(AppointmentReason::class);
+    }
+
     protected $casts = [
         'start_at' => 'datetime:h:i A',
+        'end_at' => 'datetime:h:i A',
+        'date' => 'datetime:d-m-Y'
     ];
+
 }

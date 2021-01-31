@@ -25,6 +25,7 @@ use App\Http\Controllers\AppointmentController;
 
 Route::post('/login', [UserController::class, 'login']);
 Route::post('/register', [UserController::class, 'register']);
+
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/getUser', [UserController::class, 'getUser']);
@@ -49,6 +50,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('getAppointment', [AppointmentController::class, 'getAppointment']);
     Route::get('getDoctorAppointments', [AppointmentController::class, 'getDoctorAppointments']);
     Route::post('createAppointment', [AppointmentController::class, 'createAppointment']);
+    Route::post('deleteAppointment', [AppointmentController::class, 'deleteAppointment']);
+
+    Route::get('getDoctorAppointmentsToday', [AppointmentController::class, 'getDoctorAppointmentsToday']);
     
 });
 

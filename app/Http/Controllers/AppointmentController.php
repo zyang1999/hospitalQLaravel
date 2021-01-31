@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Appointment;
+use App\Models\AppointmentReason;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 
@@ -56,8 +57,49 @@ class AppointmentController extends Controller
         }
     }
 
+    public function getDoctorAppointmentsToday(Request $request){
+        $appointments = $request->user()->doctorAppointments()->whereDate('date', Carbon::today())->get()->load(['patient', 'reason']);
+
+        return response()->json([
+            'appointments' =>$appointments
+        ]);
+    }
+
+    public function deleteAppointment(Request $request){
+        $appointment = Appointment::find($request->id);
+        if($appointment->patient_id !== null){
+            $validator = Validator::make($request->all(),[
+                'reason' => 'required'
+            ]);
+                
+            if($validator->fails()){
+                return response()->json([
+                    'success' => false,
+                    'message' => $validator->messages()
+                ]);
+            }
+
+            $appointment->status = 'CANCELLED';
+            $appointment->save();
+            
+            $reason = new AppointmentReason;
+            $reason->reason = $request->reason;
+            $appointment->reason()->save($reason);
+        }else{  
+            $appointment->delete();
+        }
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Appointment is deleted successfully'
+        ]);
+    }
+
     public function getDoctorAppointments(Request $request){
-        $allAppointments = $request->user()->doctorAppointments->load(['patient'])->sortBy('start_at')->groupBy('date');
+        $allAppointments = $request->user()->doctorAppointments->load(['patient', 'reason'])->sortBy('start_at')
+                            ->groupBy(function ($item){
+                                return($item->date->format('Y-m-d'));
+                            });
         
         return response()->json([
             'allAppointments' => $allAppointments
