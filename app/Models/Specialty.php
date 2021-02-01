@@ -16,4 +16,8 @@ class Specialty extends Model
     public function user(){
         return $this->belongsTo(User::class, 'doctor_id');
     }
+
+    public function queues(){
+        return $this->hasMany(Queue::class, 'served_by');
+    }
 }

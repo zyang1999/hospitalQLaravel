@@ -32,7 +32,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/storeVerificationCredential', [UserController::class, 'storeVerificationCredential']);
     Route::post('/storeSelfie', [UserController::class, 'storeSelfie']);
 
-    Route::post('/joinQueue', [QueueController::class, 'joinQueue']);
+    
     Route::get('/getUserQueue', [QueueController::class, 'getUserQueue']);
     Route::get('/getAllQueue', [QueueController::class, 'getAllQueue']);
     Route::post('/updateQueue', [QueueController::class, 'updateQueue']);
@@ -53,6 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('deleteAppointment', [AppointmentController::class, 'deleteAppointment']);
 
     Route::get('getDoctorAppointmentsToday', [AppointmentController::class, 'getDoctorAppointmentsToday']);
-    
+    Route::post('completeAppointment', [AppointmentController::class, 'completeAppointment']);
 });
 
+Route::post('/joinQueue', [QueueController::class, 'joinQueue']);

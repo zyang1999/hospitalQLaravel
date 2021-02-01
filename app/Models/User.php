@@ -43,6 +43,15 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
+    protected $appends = ['selfie_string'];
+
+    public function getSelfieStringAttribute()
+    {
+        $data = file_get_contents($this->selfie);
+        $base64 = 'data:image/png;base64,' . base64_encode($data);
+        return $base64;
+    }
+
     public function queues()
     {
         return $this->hasMany(Queue::class);
@@ -63,5 +72,9 @@ class User extends Authenticatable
 
     public function doctorAppointments(){
         return $this->hasMany(Appointment::class, 'doctor_id');
+    }
+
+    public function doctorQueues(){
+        return $this->hasMany(Queue::class, 'served_by');
     }
 }

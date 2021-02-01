@@ -58,10 +58,21 @@ class AppointmentController extends Controller
     }
 
     public function getDoctorAppointmentsToday(Request $request){
-        $appointments = $request->user()->doctorAppointments()->whereDate('date', Carbon::today())->get()->load(['patient', 'reason']);
+        $appointments = $request->user()->doctorAppointments()->whereDate('date', Carbon::today())->get()->load(['patient', 'reason','feedback']);
 
         return response()->json([
             'appointments' =>$appointments
+        ]);
+    }
+
+    public function completeAppointment (Request $request){
+        $appointment = Appointment::find($request->id);
+        $appointment->status = 'COMPLETED';
+        $appointment->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Appointment status updated successfully'
         ]);
     }
 
@@ -96,7 +107,7 @@ class AppointmentController extends Controller
     }
 
     public function getDoctorAppointments(Request $request){
-        $allAppointments = $request->user()->doctorAppointments->load(['patient', 'reason'])->sortBy('start_at')
+        $allAppointments = $request->user()->doctorAppointments->load(['patient', 'reason','feedback'])->sortBy('start_at')
                             ->groupBy(function ($item){
                                 return($item->date->format('Y-m-d'));
                             });

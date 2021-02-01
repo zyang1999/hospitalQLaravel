@@ -25,6 +25,10 @@ class Appointment extends Model
     {
         return $this->hasOne(AppointmentReason::class);
     }
+    public function feedback()
+    {
+        return $this->hasOne(AppointmentFeedback::class);
+    }
 
     protected $casts = [
         'start_at' => 'datetime:h:i A',

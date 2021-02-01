@@ -3,27 +3,38 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 use App\Models\Queue;
 use App\Models\User;
 use App\Models\Office;
 use App\Models\Reason;
+use App\Models\Specialty;
 use Carbon\Carbon;
 
 class QueueController extends Controller
 {
     public function joinQueue(Request $request)
     {
-        $queue = new Queue;
-        $queue_no = (int)Queue::where('location', $request->specialty)->max('queue_no') + 1;
-        $queue->queue_no = sprintf("%04d", $queue_no);
-        $queue->status = "WAITING";
-        $queue->location = $request->specialty;
-        $queue->specialty = $request->specialty;
 
-        $request->user()->queues()->save($queue);
+        $queues = Specialty::where('specialty', $request->specialty)
+                        ->get()
+                        ->sortBy(function ($queue){
+                            return count($queue->user->doctorQueues);
+                        })
+                        ->pluck('id');
+
+        // $queue = new Queue;
+        // $queue_no = (int)Queue::where('location', $request->specialty)->max('queue_no') + 1;
+        // $queue->queue_no = sprintf("%04d", $queue_no);
+        // $queue->status = "WAITING";
+        // $queue->location = $request->specialty;
+        // $queue->specialty = $request->specialty;
+
+        // $request->user()->queues()->save($queue);
 
         return response()->json([
-            'queue' => $queue,
+            'queue' => $queues,
         ]);
     }
 
@@ -76,12 +87,9 @@ class QueueController extends Controller
         $allQueue = null;
 
         $userQueue = $request->user()->queues()->where('status', 'WAITING')->orwhere('status', 'SERVING')->latest()->first();
-    
-        $profileImage = base64_encode(file_get_contents($request->user()->selfie));
 
         return response()->json([
             'user' => $request->user(),
-            'profileImage' => $profileImage,
             'userQueue' => $userQueue
         ]);
     }
@@ -99,8 +107,7 @@ class QueueController extends Controller
         }
 
         $allQueue = Queue::where('location', $location)
-            ->where('status', 'SERVING')
-            ->orWhere('status', 'WAITING')
+            ->where('status', 'not like', 'SERVED')
             ->whereDate('created_at', Carbon::today())
             ->take(4)
             ->get();
@@ -114,7 +121,7 @@ class QueueController extends Controller
 
         return response()->json([
             'allQueue' => $allQueue,
-            'currentQueue' => $currentQueue,
+            'currentQueue' => $currentQueue
         ]);
     }
 
@@ -154,6 +161,18 @@ class QueueController extends Controller
 
     public function cancelQueue(Request $request)
     {
+        $validator = Validator::make($request->all(),[
+            'queueId' => 'required',
+            'reason' => 'required'
+        ]);
+
+        if($validator->fails()){
+            return response()->json([
+                'success' => false,
+                'message' => $validator->messages()
+            ]);
+        }
+
         $queueId = $request->queueId;
 
         $queue = Queue::find($queueId);
@@ -165,6 +184,8 @@ class QueueController extends Controller
         $queue->reason()->save($reason);
 
         return response()->json([
+            'success' => true,
+            'message' => 'Queue is cancelled successfully',
             'queue' => $queue,
             'reason' => $reason
         ]);
