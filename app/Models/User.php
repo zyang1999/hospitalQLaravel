@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Carbon\Carbon;
 
 class User extends Authenticatable
 {
@@ -62,8 +63,8 @@ class User extends Authenticatable
         return $this->hasOne(Office::class);
     }
 
-    public function specialties(){
-        return $this->hasMany(Specialty::class, 'doctor_id');
+    public function specialty(){
+        return $this->hasOne(Specialty::class, 'doctor_id');
     }
 
     public function appointments(){
@@ -76,5 +77,12 @@ class User extends Authenticatable
 
     public function doctorQueues(){
         return $this->hasMany(Queue::class, 'served_by');
+    }
+
+    public function getDoctorPendingQueues(){
+        return $this->doctorQueues()
+                ->whereDate('created_at', Carbon::today())
+                ->whereIn('status', ['SERVING', 'WAITING'])
+                ->get();
     }
 }

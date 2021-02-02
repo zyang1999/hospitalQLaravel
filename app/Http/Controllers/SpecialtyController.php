@@ -15,7 +15,7 @@ class SpecialtyController extends Controller
         }else {
             $specialties = Specialty::all();
             if($request->doctorId != 'All'){
-                $specialties = User::find($request->doctorId)->specialties()->get();
+                $specialties = User::find($request->doctorId)->specialty;
             }
         }
 

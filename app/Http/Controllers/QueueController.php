@@ -17,24 +17,32 @@ class QueueController extends Controller
     public function joinQueue(Request $request)
     {
 
-        $queues = Specialty::where('specialty', $request->specialty)
+        $doctorId = Specialty::where('specialty', $request->specialty)
                         ->get()
                         ->sortBy(function ($queue){
                             return count($queue->user->doctorQueues);
                         })
-                        ->pluck('id');
+                        ->pluck('user.id')
+                        ->values()
+                        ->all();
+        
+        $doctor = User::find($doctorId[0]);
+        $location = $doctor->specialty->location;
 
-        // $queue = new Queue;
-        // $queue_no = (int)Queue::where('location', $request->specialty)->max('queue_no') + 1;
-        // $queue->queue_no = sprintf("%04d", $queue_no);
-        // $queue->status = "WAITING";
-        // $queue->location = $request->specialty;
-        // $queue->specialty = $request->specialty;
+        $queue = new Queue;
+        $queue_no = (int)Queue::where('specialty', $request->specialty)
+                        ->whereDate('created_at', Carbon::today())
+                        ->max('queue_no') + 1;
+        $queue->queue_no = sprintf("%04d", $queue_no);
+        $queue->status = "WAITING";
+        $queue->location = $location;
+        $queue->served_by = $doctor->id;
+        $queue->specialty = $request->specialty;
 
-        // $request->user()->queues()->save($queue);
+        $request->user()->queues()->save($queue);
 
         return response()->json([
-            'queue' => $queues,
+            'queue' => $queue
         ]);
     }
 
@@ -96,28 +104,21 @@ class QueueController extends Controller
 
     public function getAllQueue(Request $request)
     {
-        $role = $request->user()->role;
+        $allQueue = [];
+        $currentQueue = [];
+        $user = $request->user();
 
-        if ($role == 'DOCTOR') {
-            $location = 'CONSULTATION';
-        } else if ($role == 'PHARMACIST') {
-            $location = 'PHARMACY';
-        } else {
-            $location = $request->user()->queues()->where('status', 'WAITING')->latest()->first()->location;
+        if ($user->role == 'PATIENT') {
+            $queue = $user->queues()->where('status', 'WAITING')->latest()->first();
+            if($queue){
+                $allQueue = User::find($queue->served_by)->getDoctorPendingQueues();
+            }         
+        }else{
+            $allQueue = $user->getDoctorPendingQueues();
+            $currentQueue = $user->doctorQueues
+                                ->where('status', 'SERVING')
+                                ->load(['user']);
         }
-
-        $allQueue = Queue::where('location', $location)
-            ->where('status', 'not like', 'SERVED')
-            ->whereDate('created_at', Carbon::today())
-            ->take(4)
-            ->get();
-
-        $currentQueue = Queue::where('location', $location)
-            ->where('status', 'SERVING')
-            ->where('served_by', $request->user()->id)
-            ->with('user')
-            ->whereDate('created_at', Carbon::today())
-            ->first();
 
         return response()->json([
             'allQueue' => $allQueue,

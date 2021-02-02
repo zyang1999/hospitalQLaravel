@@ -45,7 +45,7 @@ class AppointmentController extends Controller
                 'start_at' => $startAt,
                 'end_at' => $endAt,
                 'specialty' => $request->specialty,
-                'location' => $request->user()->specialties()->where('specialty', $request->specialty)->first()->location,
+                'location' => $request->user()->specialty->location,
                 'status' => 'AVAILABLE'
             ]);
 
