@@ -4,14 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Appointment extends Model
 {
     use HasFactory;
 
+    protected $appends = ['type', 'date_string'];
+
     protected $fillable = ['date', 'start_at', 'specialty', 'status', 'location', 'end_at'];
 
-    public function user()
+    public function doctor()
     {
         return $this->belongsTo(User::class, 'doctor_id');
     }
@@ -21,13 +24,18 @@ class Appointment extends Model
         return $this->belongsTo(User::class, 'patient_id');
     }
 
-    public function reason()
-    {
-        return $this->hasOne(AppointmentReason::class);
-    }
     public function feedback()
     {
         return $this->hasOne(AppointmentFeedback::class);
+    }
+    
+    public function getTypeAttribute()
+    {
+        return 'Appointment';
+    }
+
+    public function getDateStringAttribute(){
+        return Carbon::parse($this->date)->format('d-m-Y');
     }
 
     protected $casts = [
@@ -35,5 +43,4 @@ class Appointment extends Model
         'end_at' => 'datetime:h:i A',
         'date' => 'datetime:d-m-Y'
     ];
-
 }

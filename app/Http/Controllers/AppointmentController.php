@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Appointment;
-use App\Models\AppointmentReason;
+use App\Models\AppointmentFeedback;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 
@@ -58,7 +58,7 @@ class AppointmentController extends Controller
     }
 
     public function getDoctorAppointmentsToday(Request $request){
-        $appointments = $request->user()->doctorAppointments()->whereDate('date', Carbon::today())->get()->load(['patient', 'reason','feedback']);
+        $appointments = $request->user()->doctorAppointments()->whereDate('date', Carbon::today())->get()->load(['patient', 'feedback','feedback']);
 
         return response()->json([
             'appointments' =>$appointments
@@ -79,9 +79,12 @@ class AppointmentController extends Controller
     public function deleteAppointment(Request $request){
         $appointment = Appointment::find($request->id);
         if($appointment->patient_id !== null){
+
+            $message = ['feedback.required' => 'The reason field is required.'];
+
             $validator = Validator::make($request->all(),[
-                'reason' => 'required'
-            ]);
+                'feedback' => 'required'
+            ], $message);
                 
             if($validator->fails()){
                 return response()->json([
@@ -93,9 +96,9 @@ class AppointmentController extends Controller
             $appointment->status = 'CANCELLED';
             $appointment->save();
             
-            $reason = new AppointmentReason;
-            $reason->reason = $request->reason;
-            $appointment->reason()->save($reason);
+            $feedback = new AppointmentFeedback;
+            $feedback->feedback = $request->feedback;
+            $appointment->feedback()->save($feedback);
         }else{  
             $appointment->delete();
         }
@@ -107,7 +110,7 @@ class AppointmentController extends Controller
     }
 
     public function getDoctorAppointments(Request $request){
-        $allAppointments = $request->user()->doctorAppointments->load(['patient', 'reason','feedback'])->sortBy('start_at')
+        $allAppointments = $request->user()->doctorAppointments->load(['patient', 'feedback'])->sortBy('start_at')
                             ->groupBy(function ($item){
                                 return($item->date->format('Y-m-d'));
                             });

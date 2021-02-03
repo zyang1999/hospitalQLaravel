@@ -31,7 +31,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/getUser', [UserController::class, 'getUser']);
     Route::post('/storeVerificationCredential', [UserController::class, 'storeVerificationCredential']);
     Route::post('/storeSelfie', [UserController::class, 'storeSelfie']);
+    Route::get('/getHistory', [UserController::class, 'getHistory']);
 
+    Route::post('/joinQueue', [QueueController::class, 'joinQueue']);
     Route::get('/getUserQueue', [QueueController::class, 'getUserQueue']);
     Route::get('/getAllQueue', [QueueController::class, 'getAllQueue']);
     Route::post('/updateQueue', [QueueController::class, 'updateQueue']);

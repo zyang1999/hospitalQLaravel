@@ -44,7 +44,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    protected $appends = ['selfie_string'];
+    protected $appends = ['selfie_string', 'full_name'];
 
     public function getSelfieStringAttribute()
     {
@@ -55,7 +55,7 @@ class User extends Authenticatable
 
     public function queues()
     {
-        return $this->hasMany(Queue::class);
+        return $this->hasMany(Queue::class, 'user_id');
     }
 
     public function office()
@@ -75,14 +75,53 @@ class User extends Authenticatable
         return $this->hasMany(Appointment::class, 'doctor_id');
     }
 
-    public function doctorQueues(){
+    public function staffQueues(){
         return $this->hasMany(Queue::class, 'served_by');
     }
 
+    public function getFullNameAttribute(){
+        return $this->first_name . " " . $this->last_name;
+    }
+
     public function getDoctorPendingQueues(){
-        return $this->doctorQueues()
+        return $this->staffQueues()
                 ->whereDate('created_at', Carbon::today())
                 ->whereIn('status', ['SERVING', 'WAITING'])
                 ->get();
+    }
+
+    public function getNursePendingQueues(){
+
+        $queues = Queue::whereIn('status', ['WAITING', 'SERVING'])
+                    ->where('specialty', 'Phamarcy')
+                    ->whereDate('created_at', Carbon::today())
+                    ->get();
+
+        return $queues;
+    }
+
+    public function getCurrentServing(){
+        return $this->staffQueues
+        ->where('status', 'SERVING')
+        ->load(['user'])
+        ->first();
+    }
+
+    public function getQueueHistory(){
+        if($this->role == 'PATIENT'){
+            $queues = $this->queues->whereIn('status', ['COMPLETED', 'CANCELLED'])->load(['doctor', 'feedback']);
+        }else{
+            $queues = $this->staffQueues->whereIn('status', ['COMPLETED', 'CANCELLED'])->load(['patient', 'feedback']);
+        }
+        return $queues;
+    }
+
+    public function getAppointmentHistory(){
+        if($this->role == 'PATIENT'){
+            $appointments = $this->appointments->load(['doctor', 'feedback']);
+        }else{
+            $appointments = $this->doctorAppointments->load(['patient', 'feedback']);
+        }
+        return $appointments;
     }
 }

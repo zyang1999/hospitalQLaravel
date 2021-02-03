@@ -171,4 +171,13 @@ class UserController extends Controller
             'doctors' => $doctors
         ]);
     }
+
+    public function getHistory(Request $request){
+        $queue = $request->user()->getQueueHistory();
+        $appointments = $request->user()->getAppointmentHistory();
+        $history = $queue->merge($appointments)->sortByDesc('updated_at')->values()->all(); 
+        return response()->json([
+            'history' => $history
+        ]);
+    }
 }

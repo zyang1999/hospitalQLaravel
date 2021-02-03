@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Queue;
 use App\Models\User;
 use App\Models\Office;
-use App\Models\Reason;
+use App\Models\Feedback;
 use App\Models\Specialty;
 use Carbon\Carbon;
 
@@ -20,7 +20,7 @@ class QueueController extends Controller
         $doctorId = Specialty::where('specialty', $request->specialty)
                         ->get()
                         ->sortBy(function ($queue){
-                            return count($queue->user->doctorQueues);
+                            return count($queue->user->staffQueues);
                         })
                         ->pluck('user.id')
                         ->values()
@@ -56,29 +56,31 @@ class QueueController extends Controller
             $prevQueue = Queue::find($request->queue_id);
             $prevQueue->status = "COMPLETED";
             $prevQueue->save();
-            if ($role = 'DOCTOR') {
+            if ($role == 'DOCTOR') {
                 $queue = new Queue;
-                $queue_no = (int)Queue::where('location', 'PHARMACY')->max('queue_no') + 1;
+                $queue_no = (int)Queue::where('specialty', 'Phamarcy')
+                                ->whereDate('created_at', Carbon::today())
+                                ->max('queue_no') + 1;
                 $queue->queue_no = sprintf("%04d", $queue_no);
                 $queue->status = "WAITING";
-                $queue->location = 'PHARMACY';
-                $queue->user_id = $prevQueue->user_id;
+                $queue->specialty = 'Phamarcy';
+                $queue->patient_id = $prevQueue->patient_id;
                 $queue->save();
             }
         }
 
-        if ($role == 'DOCTOR') {
-            $location = 'CONSULTATION';
-        } else {
-            $location = 'PHARMACY';
+        if($role == 'DOCTOR'){
+            $nextQueue = $request->user()->getDoctorPendingQueues()->where('status', 'WAITING')->first();
+        }else{
+            $nextQueue = $request->user()->getNursePendingQueues()->where('status', 'WAITING')->first();
+            if($nextQueue != null){
+                $nextQueue->served_by = $request->user()->id;
+                $nextQueue->location = $request->user()->specialty->location;
+            }      
         }
 
-        $nextQueue = Queue::where('status', 'WAITING')->where('location', $location)->first();
-        if ($nextQueue) {
+        if ($nextQueue != null) {
             $nextQueue->status = "SERVING";
-            $nextQueue->served_by = $request->user()->id;
-            $user = User::find($request->user_id);
-            $nextQueue->location = $request->user()->office->office_no;
             $nextQueue->save();
         }
 
@@ -91,10 +93,12 @@ class QueueController extends Controller
 
     public function getUserQueue(Request $request)
     {
-
         $allQueue = null;
 
-        $userQueue = $request->user()->queues()->where('status', 'WAITING')->orwhere('status', 'SERVING')->latest()->first();
+        $userQueue = $request->user()->queues()
+                        ->where('status', 'WAITING')
+                        ->orwhere('status', 'SERVING')
+                        ->latest()->first();
 
         return response()->json([
             'user' => $request->user(),
@@ -108,16 +112,25 @@ class QueueController extends Controller
         $currentQueue = [];
         $user = $request->user();
 
-        if ($user->role == 'PATIENT') {
-            $queue = $user->queues()->where('status', 'WAITING')->latest()->first();
-            if($queue){
-                $allQueue = User::find($queue->served_by)->getDoctorPendingQueues();
-            }         
-        }else{
-            $allQueue = $user->getDoctorPendingQueues();
-            $currentQueue = $user->doctorQueues
-                                ->where('status', 'SERVING')
-                                ->load(['user']);
+        switch ($user->role) {
+            case 'PATIENT':
+                $queue = $user->queues()->where('status', 'WAITING')->latest()->first();
+                if($queue->specialty == 'Phamarcy'){
+                    $allQueue = $user->getNursePendingQueues();
+                }else{
+                    $allQueue = User::find($queue->served_by)->getDoctorPendingQueues();
+                }     
+                break;
+
+            case 'DOCTOR':
+                $allQueue = $user->getDoctorPendingQueues();
+                $currentQueue = $user->getCurrentServing();
+                break;
+
+            case 'NURSE':
+                $allQueue = $user->getNursePendingQueues();
+                $currentQueue = $user->getCurrentServing();
+                break;
         }
 
         return response()->json([
@@ -162,10 +175,12 @@ class QueueController extends Controller
 
     public function cancelQueue(Request $request)
     {
+        $message = ['feedback.required' => 'The reason field is required.'];
+
         $validator = Validator::make($request->all(),[
             'queueId' => 'required',
-            'reason' => 'required'
-        ]);
+            'feedback' => 'required'
+        ], $message);
 
         if($validator->fails()){
             return response()->json([
@@ -180,20 +195,20 @@ class QueueController extends Controller
         $queue->status = 'CANCELLED';
         $queue->save();
 
-        $reason = new Reason;
-        $reason->reason = $request->reason;
-        $queue->reason()->save($reason);
+        $feedback = new Feedback;
+        $feedback->feedback = $request->feedback;
+        $queue->feedback()->save($feedback);
 
         return response()->json([
             'success' => true,
             'message' => 'Queue is cancelled successfully',
             'queue' => $queue,
-            'reason' => $reason
+            'feedback' => $feedback
         ]);
     }
 
     public function getQueueHistory(Request $request){
-        $queueHistory = $request->user()->queues->diff(Queue::where('status', 'WAITING')->get())->load(['reason', 'served_by']);
+        $queueHistory = $request->user()->queues->diff(Queue::where('status', 'WAITING')->get())->load(['feedback', 'served_by']);
         return response()->json([
             'queueHistory' => $queueHistory
         ]);
