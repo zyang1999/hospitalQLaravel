@@ -10,7 +10,7 @@ class Queue extends Model
 {
     use HasFactory;
 
-    protected $appends = ['type', 'start_at'];
+    protected $appends = ['type', 'start_at', 'doctor_full_name', 'patient_full_name'];
 
     protected function serializeDate(\DateTimeInterface $date)
     {
@@ -19,7 +19,7 @@ class Queue extends Model
 
     public function patient()
     {
-        return $this->belongsTo(User::class, 'patient_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function doctor()
@@ -27,7 +27,6 @@ class Queue extends Model
         return $this->belongsTo(User::class, 'served_by');
     }
     
-
     public function feedback()
     {
         return $this->hasOne(Feedback::class);
@@ -39,5 +38,17 @@ class Queue extends Model
 
     public function getStartAtAttribute(){
         return Carbon::parse($this->created_at)->format('h:i A');
+    }
+
+    public function getDoctorFullNameAttribute(){
+        return $this->doctor->first_name .' '.$this->doctor->last_name;
+    }
+
+    public function getPatientFullNameAttribute(){
+        $fullName = null;
+        if($this->patient != null){
+            $fullName = $this->patient->first_name.' '.$this->patient->last_name;
+        }
+        return $fullName;
     }
 }

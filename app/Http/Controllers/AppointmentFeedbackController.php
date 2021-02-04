@@ -4,15 +4,15 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use App\Models\Feedback;
-use App\Models\Queue;
+use App\Models\AppointmentFeedback;
+use App\Models\Appointment;
 
-class FeedbackController extends Controller
+class AppointmentFeedbackController extends Controller
 {
-    public function storeFeedback(Request $request){
+    public function storeAppointmentFeedback(Request $request){
         $message = null;
         $validator = Validator::make($request->all(),[           
-            'queueId' =>'required',
+            'appointmentId' =>'required',
             'feedback' => 'required'
         ]);
 
@@ -22,11 +22,11 @@ class FeedbackController extends Controller
                 'message' => $validator->messages()
             ];
         }else{
-            $queue = Queue::find($request->queueId);
+            $appointment = Appointment::find($request->appointmentId);
 
-            $feedback = new Feedback;
+            $feedback = new AppointmentFeedback;
             $feedback->feedback = $request->feedback;
-            $queue->feedback()->save($feedback);
+            $appointment->feedback()->save($feedback);
             $message = [
                 'success' =>true
             ];

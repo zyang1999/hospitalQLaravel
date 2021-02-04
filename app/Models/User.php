@@ -103,24 +103,24 @@ class User extends Authenticatable
     public function getCurrentServing(){
         return $this->staffQueues
         ->where('status', 'SERVING')
-        ->load(['user'])
+        ->load(['patient'])
         ->first();
     }
 
     public function getQueueHistory(){
         if($this->role == 'PATIENT'){
-            $queues = $this->queues->whereIn('status', ['COMPLETED', 'CANCELLED'])->load(['doctor', 'feedback']);
+            $queues = $this->queues->whereIn('status', ['COMPLETED', 'CANCELLED'])->load(['feedback'])->makeHidden(['doctor', 'patient']);
         }else{
-            $queues = $this->staffQueues->whereIn('status', ['COMPLETED', 'CANCELLED'])->load(['patient', 'feedback']);
+            $queues = $this->staffQueues->whereIn('status', ['COMPLETED', 'CANCELLED'])->load(['feedback'])->makeHidden(['doctor', 'patient']);;
         }
         return $queues;
     }
 
     public function getAppointmentHistory(){
         if($this->role == 'PATIENT'){
-            $appointments = $this->appointments->load(['doctor', 'feedback']);
+            $appointments = $this->appointments->whereIn('status', ['COMPLETED', 'CANCELLED'])->load(['feedback'])->makeHidden(['doctor', 'patient']);;
         }else{
-            $appointments = $this->doctorAppointments->load(['patient', 'feedback']);
+            $appointments = $this->doctorAppointments->whereIn('status', ['COMPLETED', 'CANCELLED'])->load(['feedback'])->makeHidden(['doctor', 'patient']);;
         }
         return $appointments;
     }

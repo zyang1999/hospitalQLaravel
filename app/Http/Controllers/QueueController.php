@@ -64,7 +64,7 @@ class QueueController extends Controller
                 $queue->queue_no = sprintf("%04d", $queue_no);
                 $queue->status = "WAITING";
                 $queue->specialty = 'Phamarcy';
-                $queue->patient_id = $prevQueue->patient_id;
+                $queue->user_id = $prevQueue->user_id;
                 $queue->save();
             }
         }
@@ -118,7 +118,7 @@ class QueueController extends Controller
                 if($queue->specialty == 'Phamarcy'){
                     $allQueue = $user->getNursePendingQueues();
                 }else{
-                    $allQueue = User::find($queue->served_by)->getDoctorPendingQueues();
+                    $allQueue = User::find($queue->doctor)->getDoctorPendingQueues();
                 }     
                 break;
 
@@ -212,5 +212,9 @@ class QueueController extends Controller
         return response()->json([
             'queueHistory' => $queueHistory
         ]);
+    }
+
+    public function getQueueDetails(Request $request){
+        return Queue::find($request->queueId)->load(['patient', 'doctor', 'feedback']);
     }
 }

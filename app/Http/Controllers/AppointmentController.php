@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Appointment;
 use App\Models\AppointmentFeedback;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class AppointmentController extends Controller
@@ -110,7 +111,8 @@ class AppointmentController extends Controller
     }
 
     public function getDoctorAppointments(Request $request){
-        $allAppointments = $request->user()->doctorAppointments->load(['patient', 'feedback'])->sortBy('start_at')
+        $allAppointments = $request->user()->doctorAppointments->makeHidden(['doctor', 'patient'])
+                            ->sortBy('start_at')
                             ->groupBy(function ($item){
                                 return($item->date->format('Y-m-d'));
                             });
@@ -150,16 +152,16 @@ class AppointmentController extends Controller
     }
 
     public function getAppointment (Request $request){
-        $appointments = $request->user()->appointments()->where('status', 'BOOKED')->oldest('date')->get()->load(['user.specialty']);
+        $appointments = $request->user()->appointments()->where('status', 'BOOKED')->oldest('date')->get()->load(['doctor']);
         $appointmentToday = $request->user()->appointments()->where('status', 'BOOKED')->whereDate('date', Carbon::today())->first();
-        
-        if($appointmentToday){
-            $appointmentToday = $appointmentToday->load(['user.specialty']);
-        }
         
         return response()->json([
             'appointmentToday' => $appointmentToday,
             'appointments' => $appointments
         ]);
+    }
+
+    public function getAppointmentDetails (Request $request){
+        return Appointment::find($request->appointmentId)->load(['patient', 'feedback', 'doctor']);
     }
 }

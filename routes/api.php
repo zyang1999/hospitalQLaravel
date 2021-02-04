@@ -7,7 +7,7 @@ use App\Http\Controllers\QueueController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\SpecialtyController;
 use App\Http\Controllers\AppointmentController;
-
+use App\Http\Controllers\AppointmentFeedbackController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -55,4 +55,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('getDoctorAppointmentsToday', [AppointmentController::class, 'getDoctorAppointmentsToday']);
     Route::post('completeAppointment', [AppointmentController::class, 'completeAppointment']);
+
+    Route::post('storeAppointmentFeedback', [AppointmentFeedbackController::class, 'storeAppointmentFeedback']);
+    Route::post('getAppointmentDetails', [AppointmentController::class, 'getAppointmentDetails']);
+    Route::post('getQueueDetails', [QueueController::class, 'getQueueDetails']);
 });
