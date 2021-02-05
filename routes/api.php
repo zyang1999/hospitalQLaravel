@@ -59,4 +59,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('storeAppointmentFeedback', [AppointmentFeedbackController::class, 'storeAppointmentFeedback']);
     Route::post('getAppointmentDetails', [AppointmentController::class, 'getAppointmentDetails']);
     Route::post('getQueueDetails', [QueueController::class, 'getQueueDetails']);
+
+    Route::post('changePassword', [UserController::class, 'changePassword']);
+    Route::post('changeProfileImage', [UserController::class, 'changeProfileImage']);
+    Route::post('changePhoneNumber', [UserController::class, 'changePhoneNumber']);
 });

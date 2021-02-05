@@ -159,11 +159,12 @@ class UserController extends Controller
         }
     }
 
-    public function getDoctorList(Request $request){
+    public function getDoctorList(Request $request)
+    {
 
-        $doctors = User::where('role', 'DOCTOR')->get(); 
+        $doctors = User::where('role', 'DOCTOR')->get();
 
-        if($request->specialtyId != 'All'){
+        if ($request->specialtyId != 'All') {
             $doctors = Specialty::find($request->specialtyId)->user()->get();
         }
 
@@ -172,12 +173,89 @@ class UserController extends Controller
         ]);
     }
 
-    public function getHistory(Request $request){
+    public function getHistory(Request $request)
+    {
         $queue = $request->user()->getQueueHistory();
         $appointments = $request->user()->getAppointmentHistory();
-        $history = $queue->merge($appointments)->sortByDesc('updated_at')->values()->all(); 
+        $history = $queue->merge($appointments)->sortByDesc('updated_at')->values()->all();
         return response()->json([
             'history' => $history
         ]);
+    }
+
+    public function changePassword(Request $request)
+    {
+        $rules = 'required|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/|confirmed';
+
+        $validator = Validator::make($request->all(), [
+            'oldPassword' => 'required',
+            'newPassword' => $rules,
+            'newPassword_confirmation' => 'required'
+        ]);
+
+        if ($validator->fails()){
+            $response = [
+                'success' => false,
+                'message' => $validator->messages()
+            ];
+        }else{
+            $user = $request->user();
+
+            if(Hash::check($request->oldPassword, $user->password)){
+                $user->password = Hash::make($request->newPassword);
+                $user->save();
+
+                $response = [
+                    'success' => true,
+                    'message' => 'Password is changed successfully!'
+                ];
+            }else{
+                $response = [
+                    'success' => false,
+                    'message' => 'Your old password is incorrect'
+                ];
+            }
+        }
+
+        return response()->json($response);
+    }
+
+    public function changeProfileImage(Request $request)
+    {
+        $image = base64_decode($request->image);
+        $imageDirectory = 'images/' . date('mdYHis') . uniqid() . '.png';
+        Storage::put($imageDirectory, $image);
+
+        $user = $request->user();
+        $user->selfie = $imageDirectory;
+        $user->save();
+
+        return response()->json([
+            'message' => 'Profile picture is changed successfully!'
+        ]);
+    }
+
+    public function changePhoneNumber(Request $request){
+        $validator = Validator::make($request->all(),[
+            'telephone' => 'required|digits_between:10,11'
+        ]);
+
+        if($validator->fails()){
+            $response = [
+                'success' => false,
+                'message' => $validator->messages()
+            ];
+        }else{
+            $user = $request->user();
+            $user->telephone = $request->telephone;
+            $user->save();
+
+            $response = [
+                'success' => true,
+                'message' => 'Phone number is changed successfully!'
+            ];
+        }
+
+        return response()->json($response);
     }
 }
