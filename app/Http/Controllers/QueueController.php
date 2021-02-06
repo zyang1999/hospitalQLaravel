@@ -11,9 +11,17 @@ use App\Models\Office;
 use App\Models\Feedback;
 use App\Models\Specialty;
 use Carbon\Carbon;
+use App\Services\FCMCloudMessaging;
 
 class QueueController extends Controller
 {
+    protected $FCMCloudMessaging;
+
+    public function __construct(FCMCloudMessaging $FCMCloudMessaging)
+    {
+        $this->FCMCloudMessaging = $FCMCloudMessaging;
+    }
+
     public function joinQueue(Request $request)
     {
 
@@ -40,6 +48,13 @@ class QueueController extends Controller
         $queue->specialty = $request->specialty;
 
         $request->user()->queues()->save($queue);
+
+        $body = 'New Patient has joined the queue';
+        $data = [
+            'type' => 'refreshQueue'
+        ];
+
+        $this->FCMCloudMessaging->sendFCM($doctor->fcm_token, $body, $data);
 
         return response()->json([
             'queue' => $queue

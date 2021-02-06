@@ -23,7 +23,7 @@ class UserSeeder extends Seeder
         foreach ($users as $user) {
             if( $user->role == 'DOCTOR'){
                 Specialty::factory()->count(1)->for($user)->create();
-                Appointment::factory()->count(3)->for($user)->create();
+                Appointment::factory()->count(3)->for($user, 'doctor')->create();
             }
         }   
     }

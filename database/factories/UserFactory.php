@@ -34,7 +34,6 @@ class UserFactory extends Factory
             'telephone' => $this->faker->phoneNumber,
             'role' => $this->faker->randomElement($array = array('PATIENT', 'DOCTOR', 'NURSE')),
             'password' => Hash::make('testing'), // password
-            'remember_token' => Str::random(10),
         ];
     }
 }

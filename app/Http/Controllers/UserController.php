@@ -258,4 +258,16 @@ class UserController extends Controller
 
         return response()->json($response);
     }
+
+    public function saveFcmToken(Request $request){
+        $user = $request->user();
+        $user->fcm_token = $request->token;
+        $user->save();
+        
+        $this->FCMCloudMessaging->sendFCM($user->fcm_token);
+
+        return response()->json([
+            'token' => $user->fcm_token
+        ]);
+    }
 }

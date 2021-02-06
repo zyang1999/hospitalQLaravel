@@ -27,7 +27,7 @@ class CreateUsersTable extends Migration
             $table->longtext('selfie')->nullable();
             $table->string('telephone')->nullable();
             $table->string('role');
-            $table->rememberToken();
+            $table->string('fcm_token')->nullable();
             $table->timestamps();
         });
     }
