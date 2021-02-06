@@ -46,15 +46,17 @@ class QueueController extends Controller
         $queue->location = $location;
         $queue->served_by = $doctor->id;
         $queue->specialty = $request->specialty;
+        $queue->concern = $request->concern;
 
         $request->user()->queues()->save($queue);
-
-        $body = 'New Patient has joined the queue';
+        
+        $title = 'New Patient';
+        $body =  $request->user()->full_name.' has joined the queue';
         $data = [
             'type' => 'refreshQueue'
         ];
 
-        $this->FCMCloudMessaging->sendFCM($doctor->fcm_token, $body, $data);
+        $this->FCMCloudMessaging->sendFCM($doctor->fcm_token, $title, $body, $data);
 
         return response()->json([
             'queue' => $queue
@@ -85,9 +87,11 @@ class QueueController extends Controller
         }
 
         if($role == 'DOCTOR'){
-            $nextQueue = $request->user()->getDoctorPendingQueues()->where('status', 'WAITING')->first();
-        }else{
-            $nextQueue = $request->user()->getNursePendingQueues()->where('status', 'WAITING')->first();
+            $nextQueue = $request->user()->getDoctorPendingQueues()->where('status', 'WAITING')->first()->makeHidden('doctor');
+            $nextPatient = $request->user()->getDoctorPendingQueues()->where('status', 'WAITING')->skip(1)->take(1)->first();
+        }else if($role == 'NURSE'){
+            $nextQueue = $request->user()->getNursePendingQueues()->where('status', 'WAITING')->first()->makeHidden('doctor');
+            $nextPatient = $request->user()->getNursePendingQueues()->where('status', 'WAITING')->skip(1)->take(1)->first();
             if($nextQueue != null){
                 $nextQueue->served_by = $request->user()->id;
                 $nextQueue->location = $request->user()->specialty->location;
@@ -96,13 +100,36 @@ class QueueController extends Controller
 
         if ($nextQueue != null) {
             $nextQueue->status = "SERVING";
+            $waitingTime = Carbon::parse($nextQueue->created_at)->diffInSeconds(Carbon::now());
+            $nextQueue->waiting_time = $waitingTime;
             $nextQueue->save();
+
+            $token = $nextQueue->patient->fcm_token;
+            $title = 'Queue Status';
+            $body = 'Is your turn now! Please meet your doctor at Room'. $nextQueue->location;
+            $data = [
+                'type' => 'refreshQueue'
+            ];
+
+            $this->FCMCloudMessaging->sendFCM($token, $title, $body, $data);
         }
+
+        if ($nextPatient != null){
+            $token = $nextPatient->patient->fcm_token;
+            $title = 'Queue Status';
+            $body = '1 patient until your turn, please get ready!';
+            $data = [
+                'type' => 'refreshQueue'
+            ];
+    
+            $this->FCMCloudMessaging->sendFCM($nextPatientToken, $title, $body, $data);
+        } 
+    
+        
 
         return response()->json([
             'prev_queue' => $prevQueue,
-            'next_queue' => $nextQueue,
-
+            'next_queue' => $nextQueue
         ]);
     }
 
@@ -114,7 +141,9 @@ class QueueController extends Controller
                         ->where('status', 'WAITING')
                         ->orwhere('status', 'SERVING')
                         ->latest()->first();
-
+        if($userQueue != null){
+            $userQueue->append('time_range', 'number_of_patients');
+        }
         return response()->json([
             'user' => $request->user(),
             'userQueue' => $userQueue
@@ -129,11 +158,11 @@ class QueueController extends Controller
 
         switch ($user->role) {
             case 'PATIENT':
-                $queue = $user->queues()->where('status', 'WAITING')->latest()->first();
+                $queue = $user->queues()->latest()->first();
                 if($queue->specialty == 'Phamarcy'){
                     $allQueue = $user->getNursePendingQueues();
                 }else{
-                    $allQueue = User::find($queue->doctor)->getDoctorPendingQueues();
+                    $allQueue = User::find($queue->served_by)->getDoctorPendingQueues();
                 }     
                 break;
 
@@ -152,20 +181,6 @@ class QueueController extends Controller
             'allQueue' => $allQueue,
             'currentQueue' => $currentQueue
         ]);
-    }
-
-    public function getAverageWaitingTime(Request $request){
-        $queue = Queue::where('location', $request->specialty)->where('status', 'WAITING')->get();
-        $numberOfPatients = $queue->count();
-        $averageWaitingTime = $queue->avg('waiting_time');
-        $totalWaitingSeconds = $numberOfPatients * $averageWaitingTime * 60;
-        $currentTime = Carbon::now();
-        $extimatedServedAt = $currentTime->addSeconds($totalWaitingSeconds);
-        $timeRange = $extimatedServedAt->format('h:i A'). ' - ' . $extimatedServedAt->addMinutes(15)->format('h:i A');
-        return response()->json([
-            'timeRange' => $timeRange
-        ]);
-
     }
 
     public function getCurrentPatient(Request $request)

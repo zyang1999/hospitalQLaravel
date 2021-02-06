@@ -9,11 +9,11 @@ use FCM;
 
 class FCMCloudMessaging {
 
-    public function sendFCM($token, $body, $data){
+    public function sendFCM($token, $title, $body, $data){
         $optionBuilder = new OptionsBuilder();
         $optionBuilder->setTimeToLive(60*20);
     
-        $notificationBuilder = new PayloadNotificationBuilder('my title');
+        $notificationBuilder = new PayloadNotificationBuilder($title);
         $notificationBuilder->setBody($body)
                             ->setSound('default');
     

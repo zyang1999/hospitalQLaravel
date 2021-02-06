@@ -8,9 +8,15 @@ use App\Models\AppointmentFeedback;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Services\FCMCloudMessaging;
 
 class AppointmentController extends Controller
 {
+    public function __construct(FCMCloudMessaging $FCMCloudMessaging)
+    {
+        $this->FCMCloudMessaging = $FCMCloudMessaging;
+    }
+
     public function createAppointment(Request $request){
         $date = Carbon::parse($request->date)->setTimeZone('Asia/Kuala_Lumpur');
         $dateString = $date->toDateString();
@@ -37,6 +43,7 @@ class AppointmentController extends Controller
             'end_at' => $endAt,
             'specialty' => $specialty->specialty,
             'location' => $specialty->location,
+            'concern' => $request->concern,
             'status' => 'AVAILABLE'
         ]);
 

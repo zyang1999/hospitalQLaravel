@@ -51,4 +51,21 @@ class Queue extends Model
         }
         return $fullName;
     }
+    public function getNumberofPatientsAttribute(){
+        return $this->doctor->staffQueues()
+                    ->where('status', 'WAITING')
+                    ->whereDate('created_at', Carbon::today())
+                    ->count();
+    }
+
+    public function getTimeRangeAttribute(){
+        $queue = Queue::where('location', $this->specialty)->where('status', 'WAITING')->get();
+        $numberOfPatients = $queue->count();
+        $averageWaitingTime = $queue->avg('waiting_time');
+        $totalWaitingSeconds = $numberOfPatients * $averageWaitingTime;
+        $currentTime = Carbon::now();
+        $extimatedServedAt = $currentTime->addSeconds($totalWaitingSeconds);
+        $timeRange = $extimatedServedAt->format('h:i A'). ' - ' . $extimatedServedAt->addMinutes(15)->format('h:i A');
+        return $timeRange;
+    }
 }

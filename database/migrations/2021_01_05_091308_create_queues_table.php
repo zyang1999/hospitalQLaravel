@@ -22,6 +22,7 @@ class CreateQueuesTable extends Migration
             $table->integer('waiting_time')->nullable();
             $table->string('served_by')->nullable();
             $table->string('location')->nullable();
+            $table->text('concern')->nullable();
             $table->timestamps();
         });
     }

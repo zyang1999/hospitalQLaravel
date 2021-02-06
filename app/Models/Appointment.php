@@ -12,7 +12,7 @@ class Appointment extends Model
 
     protected $appends = ['type', 'date_string', 'doctor_full_name', 'patient_full_name'];
 
-    protected $fillable = ['date', 'start_at', 'specialty', 'status', 'location', 'end_at'];
+    protected $fillable = ['date', 'start_at', 'specialty', 'status', 'location', 'end_at', 'concern'];
 
     public function doctor()
     {
@@ -57,7 +57,6 @@ class Appointment extends Model
 
     protected $casts = [
         'start_at' => 'datetime:h:i A',
-        'end_at' => 'datetime:h:i A',
-        'date' => 'datetime:d-m-Y'
+        'end_at' => 'datetime:h:i A'
     ];
 }
