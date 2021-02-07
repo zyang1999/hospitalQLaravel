@@ -53,6 +53,7 @@ class QueueController extends Controller
         $title = 'New Patient';
         $body =  $request->user()->full_name.' has joined the queue';
         $data = [
+            'route' => 'Staff',
             'type' => 'refreshQueue'
         ];
 
@@ -108,6 +109,7 @@ class QueueController extends Controller
             $title = 'Queue Status';
             $body = 'Is your turn now! Please meet your doctor at Room'. $nextQueue->location;
             $data = [
+                'route' => 'Patient',
                 'type' => 'refreshQueue'
             ];
 
@@ -119,17 +121,38 @@ class QueueController extends Controller
             $title = 'Queue Status';
             $body = '1 patient until your turn, please get ready!';
             $data = [
+                'route' => 'Patient',
                 'type' => 'refreshQueue'
             ];
     
             $this->FCMCloudMessaging->sendFCM($nextPatientToken, $title, $body, $data);
         } 
     
-        
-
         return response()->json([
             'prev_queue' => $prevQueue,
             'next_queue' => $nextQueue
+        ]);
+    }
+
+    public function stopQueue(Request $request){
+        $currentQueue = Queue::find($request->queue_id);
+        $currentQueue->status = "COMPLETED";
+        $currentQueue->save();
+        if ($request->user()->role == 'DOCTOR') {
+            $queue = new Queue;
+            $queue_no = (int)Queue::where('specialty', 'Phamarcy')
+                            ->whereDate('created_at', Carbon::today())
+                            ->max('queue_no') + 1;
+            $queue->queue_no = sprintf("%04d", $queue_no);
+            $queue->status = "WAITING";
+            $queue->specialty = 'Phamarcy';
+            $queue->user_id = $currentQueue->user_id;
+            $queue->save();
+        }
+
+        return response()->json([
+            'currentQueue' => $currentQueue,
+            'newQueue' => $queue
         ]);
     }
 
@@ -228,6 +251,26 @@ class QueueController extends Controller
         $feedback = new Feedback;
         $feedback->feedback = $request->feedback;
         $queue->feedback()->save($feedback);
+
+        if($request->user()->role == 'PATIENT'){
+            $token = $queue->doctor->fcm_token;
+            $body = $request->user()->full_name. ' has cancelled his queue.';
+            $data = [
+                'route' => 'Staff',
+                'type' => 'refreshQueue'
+            ];
+        }else{
+            $token = $queue->patient->fcm_token;
+            $body = 'DR. ' . $request->user()->full_name. ' has cancelled your queue.';
+            $data = [
+                'route' => 'Patient',
+                'type' => 'refreshQueue'
+            ];
+        }
+
+        $title = 'Queue Cancelled';
+
+        $this->FCMCloudMessaging->sendFCM($token, $title, $body, $data);
 
         return response()->json([
             'success' => true,

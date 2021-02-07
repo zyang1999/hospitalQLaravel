@@ -96,6 +96,18 @@ class AppointmentController extends Controller
             $feedback = new AppointmentFeedback;
             $feedback->feedback = $request->feedback;
             $appointment->feedback()->save($feedback);
+
+            $token = $appointment->patient->fcm_token;
+            $title = 'Appointment';
+            $body = 'DR. ' . $request->user()->full_name . ' has cancalled your appointment.';
+            $data = [
+                'tab' => 'HistoryStack', 
+                'screen'=>'AppointmentDetails',
+                'appointmentId' => $appointment->id
+            ];
+
+            $this->FCMCloudMessaging->sendFCM($token, $title, $body, $data);
+
         }else{  
             $appointment->delete();
         }
@@ -140,6 +152,16 @@ class AppointmentController extends Controller
         $appointment = Appointment::find($request->appointmentId);
         $appointment->status = 'BOOKED';
         $request->user()->appointments()->save($appointment);
+
+        $token = $appointment->doctor->fcm_token;
+        $title = 'Appointment';
+        $body = $request->user()->full_name . ' has booked an appointment from you.';
+        $data = [
+            'type' => 'AppointmentBooking',
+            'appointmentId' => $appointment->id
+        ];
+        
+        $this->FCMCloudMessaging->sendFCM($token, $title, $body, $data);
 
         return response()->json([
             'success' => true,
