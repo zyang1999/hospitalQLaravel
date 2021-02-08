@@ -300,4 +300,20 @@ class UserController extends Controller
         }   
         return view('email_verification');   
     }
+
+    public function getStaffs()
+    {
+        $staffs = User::whereIn('role', ['DOCTOR', 'NURSE', 'ADMIN'])->get();
+
+        return view('staff', ['staffs' => $staffs]);
+    }
+
+    public function getUserDetails($id)
+    {
+        $user = User::find($id);
+
+        return response()->json([
+            'user' => $user
+        ]);
+    }
 }

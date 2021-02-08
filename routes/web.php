@@ -14,7 +14,15 @@ use App\Http\Controllers\UserController;
 |
 */
 
-// Route::get('/', function () {
-//     return view('welcome');
-// });
-Route::get('/verifyEmail/{token}', [UserController::class, 'verifyEmail']);
+Route::get('/', function () {
+    return view('welcome');
+});
+
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->middleware(['auth'])->name('dashboard');
+
+Route::get('/staff', [UserController::class, 'getStaffs'])->middleware(['auth'])->name('staff');
+Route::get('/user/{id}', [UserController::class, 'getUserDetails'])->middleware(['auth']);
+
+require __DIR__.'/auth.php';
