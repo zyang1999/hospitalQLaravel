@@ -22,7 +22,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role'
+        'role',
+        'email_verified_at'
     ];
 
     /**
@@ -40,16 +41,16 @@ class User extends Authenticatable
      *
      * @var array
      */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-    ];
 
     protected $appends = ['selfie_string', 'full_name'];
 
     public function getSelfieStringAttribute()
     {
-        $data = file_get_contents($this->selfie);
-        $base64 = 'data:image/png;base64,' . base64_encode($data);
+        $base64 = null;
+        if($this->selfie != null){
+            $data = file_get_contents($this->selfie);
+            $base64 = 'data:image/png;base64,' . base64_encode($data);
+        }      
         return $base64;
     }
 

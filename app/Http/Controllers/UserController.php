@@ -7,11 +7,21 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use App\Models\User;
 use App\Models\Specialty;
+use App\Services\Mail;
+use Carbon\Carbon;
 
 class UserController extends Controller
 {
+    protected $mail;
+
+    public function __construct(Mail $mail){
+        $this->mail = $mail;
+    }
+
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -27,7 +37,7 @@ class UserController extends Controller
             ]);
         } else {
             $user = User::where('email', $request->email)->first();
-
+            
             if (!$user || !Hash::check($request->password, $user->password)) {
                 return response()->json([
                     'success' => false,
@@ -44,7 +54,7 @@ class UserController extends Controller
         }
     }
 
-    public function register(StoreUserRequest $request)
+    public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'email' => 'required|unique:users|email',
@@ -58,18 +68,30 @@ class UserController extends Controller
                 'message' => $validator->messages()
             ]);
         } else {
+            do {
+                $emailToken = Str::random(40);
+                $user = User::where('email_verified_at', $emailToken)->first();
+            } while ($user);
+
             $user = User::create([
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
-                'role' => $request->role
+                'role' => $request->role,
+                'email_verified_at' => $emailToken
             ]);
-
-            $token = $user->createToken($request->email)->plainTextToken;
+            
+            // $token = $user->createToken($request->email)->plainTextToken;
+            $data = [
+                'email' => $user->email,
+                'url' => config('app.url'). 'verifyEmail/' . $emailToken 
+            ];
+            $this->mail->sendMail($user, 'email_verification', 'Email Verification', $data);
 
             return response()->json([
                 'success' => true,
                 'user' => $user,
-                'token' => $token
+                'message' => 'A verification email has been sent to your email. Please verify your email.'
+                // 'token' => $token
             ]);
         }
     }
@@ -161,7 +183,6 @@ class UserController extends Controller
 
     public function getDoctorList(Request $request)
     {
-
         $doctors = User::where('role', 'DOCTOR')->get();
 
         if ($request->specialtyId != 'All') {
@@ -269,5 +290,14 @@ class UserController extends Controller
         return response()->json([
             'token' => $user->fcm_token
         ]);
+    }
+
+    public function verifyEmail($token)
+    {
+        $user = User::where('email_verified_at', $token)->first();
+        if($user != null){
+            $user->email_verified_at = 'VERIFIED';
+        }   
+        return view('email_verification');   
     }
 }
