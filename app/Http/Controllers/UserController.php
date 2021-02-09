@@ -171,7 +171,7 @@ class UserController extends Controller
             Storage::put($imageDirectory, $selfie);
 
             $user->selfie = $imageDirectory;
-            $user->status = $request->status;
+            $user->status = 'VERIFYING';
             $user->save();
 
             return response()->json([
@@ -310,10 +310,107 @@ class UserController extends Controller
 
     public function getUserDetails($id)
     {
-        $user = User::find($id);
+        $user = User::find($id)->load('specialty');
 
         return response()->json([
             'user' => $user
+        ]);
+    }
+
+    public function getUnverifiedPatients()
+    {
+        return view('verification', ['patients' => User::where('status', 'VERIFYING')->get()]);
+    }
+
+    public function getUserWithIC($ic){
+        return response()->json([
+            'patient' => User::where('IC_no', $ic)->first()
+        ]);
+    }
+
+    public function approveAccount(Request $request)
+    {
+        $user = User::find($request->id);
+        $user->status = 'VERIFIED';
+        $user->save();
+
+        $data = [
+            'email' => $user->email
+        ];
+
+        $this->mail->sendMail($user, 'approve_verification', 'Account Verification Approved', $data);
+
+        return response()->json([
+            'success' => true,
+            'user' => $user
+        ]);
+    }
+
+    public function rejectAccount(Request $request)
+    {
+        $user = User::find($request->id);
+        $user->status = 'UNVERIFIED';
+        $user->save();
+
+        $data = [
+            'email' => $user->email
+        ];
+
+        $this->mail->sendMail($user, 'reject_verification', 'Account Verification Rejected', $data);
+
+        return response()->json([
+            'success' => true,
+            'user' => $user
+        ]);
+    }
+    public function base64_decode_if_needed($str)
+    {
+        $decoded = base64_decode($str, true);
+        if($str === base64_encode($decoded)) {
+            return $decoded;
+        }
+        return $str;
+    }
+
+    public function createStaff(Request $request)
+    {   
+        // $validator = Validator::make($request->all(),[
+        //     'email' => 'unique:users',
+        //     'IC_no' => 'unique:users|digits_between:12,12',
+        //     'telephone' => 'required|digits_between:10,11',
+        //     'image' => 'required'
+        // ], [
+        //     'IC_no.unique' => 'The IC number has been taken.' ,
+        //     'IC_no.digits_between' => 'The IC number has been taken.'
+        // ]);
+
+        // if($validator->fails()){
+        //     return response()->json([
+        //         'success' => false,
+        //         'message' => $validator->messages()
+        //     ]);
+        // }
+        
+        $imageDirectory = 'images/' . date('mdYHis') . uniqid() . '.png';
+        Storage::put($imageDirectory, $image);
+
+        // $user = User::create([
+        //     'first_name' => $request->firstName,
+        //     'last_name' => $request->lastName,
+        //     'gender' => $request->gender,
+        //     'telephone' => $request->telephone,
+        //     'home_address' => $request->homeAddress,
+        //     'IC_no' => $request->IC_no,
+        //     'status' => 'VERIFIED',
+        //     'role' => $request->role,
+        //     'email' => $request->email,
+        //     'password' => Hash::make($request->ic),
+        //     'email_verified_at' => 'VERIFIED',
+        //     'selfie' => $imageDirectory
+        // ]);
+
+        return response()->json([
+            'user' => $image
         ]);
     }
 }

@@ -290,4 +290,57 @@ class QueueController extends Controller
     public function getQueueDetails(Request $request){
         return Queue::find($request->queueId)->load(['patient', 'doctor', 'feedback']);
     }
+
+    public function createQueue(Request $request){
+        $user = User::where('IC_no', $request->ic)->first();
+        if($user == null){
+            $user = User::create([
+                'first_name' => $request->firstName,
+                'last_name' => $request->lastName,
+                'gender' => $request->gender,
+                'telephone' => $request->telephone,
+                'home_address' => $request->homeAddress,
+                'IC_no' => $request->ic,
+                'status' => 'VERIFIED',
+                'role' => 'PATIENT'
+            ]);
+        }
+        $doctorId = Specialty::where('specialty', $request->specialty)
+                        ->get()
+                        ->sortBy(function ($queue){
+                            return count($queue->user->staffQueues);
+                        })
+                        ->pluck('user.id')
+                        ->values()
+                        ->all();
+        
+        $doctor = User::find($doctorId[0]);
+        $location = $doctor->specialty->location;
+
+        $queue = new Queue;
+        $queue_no = (int)Queue::where('specialty', $request->specialty)
+                        ->whereDate('created_at', Carbon::today())
+                        ->max('queue_no') + 1;
+        $queue->queue_no = sprintf("%04d", $queue_no);
+        $queue->status = "WAITING";
+        $queue->location = $location;
+        $queue->served_by = $doctor->id;
+        $queue->specialty = $request->specialty;
+        $queue->concern = $request->concern;
+        
+        $user->queues()->save($queue);
+        
+        $title = 'New Patient';
+        $body =  $request->user()->full_name.' has joined the queue';
+        $data = [
+            'route' => 'Staff',
+            'type' => 'refreshQueue'
+        ];
+
+        $this->FCMCloudMessaging->sendFCM($doctor->fcm_token, $title, $body, $data);
+
+        return response()->json([
+            'queue' => $queue
+        ]);
+    }
 }

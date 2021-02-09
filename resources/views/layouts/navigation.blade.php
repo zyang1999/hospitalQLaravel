@@ -17,8 +17,18 @@
                     </x-nav-link>
                 </div>
                 <div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
-                    <x-nav-link :href="route('staff')" :active="request()->routeIs('dashboard')">
+                    <x-nav-link :href="route('staff')" :active="request()->routeIs('staff')">
                         {{ __('Staff') }}
+                    </x-nav-link>
+                </div>
+                <div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
+                    <x-nav-link :href="route('verification')" :active="request()->routeIs('verification')">
+                        {{ __('Verification') }}
+                    </x-nav-link>
+                </div>
+                <div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
+                    <x-nav-link :href="route('queue')" :active="request()->routeIs('queue')">
+                        {{ __('Queue') }}
                     </x-nav-link>
                 </div>
             </div>
@@ -70,6 +80,21 @@
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
+            </x-responsive-nav-link>
+        </div>
+        <div class="pt-2 pb-3 space-y-1">
+            <x-responsive-nav-link :href="route('staff')" :active="request()->routeIs('staff')">
+                {{ __('Staff') }}
+            </x-responsive-nav-link>
+        </div>
+        <div class="pt-2 pb-3 space-y-1">
+            <x-responsive-nav-link :href="route('verification')" :active="request()->routeIs('verification')">
+                {{ __('Verification') }}
+            </x-responsive-nav-link>
+        </div>
+        <div class="pt-2 pb-3 space-y-1">
+            <x-responsive-nav-link :href="route('queue')" :active="request()->routeIs('queue')">
+                {{ __('Queue') }}
             </x-responsive-nav-link>
         </div>
 

@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\SpecialtyController;
+use App\Http\Controllers\QueueController;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,11 +20,20 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth'])->name('dashboard');
-
-Route::get('/staff', [UserController::class, 'getStaffs'])->middleware(['auth'])->name('staff');
-Route::get('/user/{id}', [UserController::class, 'getUserDetails'])->middleware(['auth']);
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard', function () {
+        return view('dashboard');
+    })->name('dashboard');
+    
+    Route::get('/staff', [UserController::class, 'getStaffs'])->name('staff');
+    Route::get('/verification', [UserController::class, 'getUnverifiedPatients'])->name('verification');
+    Route::get('/queue', [SpecialtyController::class, 'getSpecialtiesView'])->name('queue');
+    Route::get('/user/{id}', [UserController::class, 'getUserDetails']);
+    Route::get('/getUserWithIC/{ic}', [UserController::class, 'getUserWithIC']);
+    Route::post('/createQueue', [QueueController::class, 'createQueue']);
+    Route::post('/approveAccount', [UserController::class, 'approveAccount']);
+    Route::post('/rejectAccount', [UserController::class, 'rejectAccount']);
+    Route::post('/createStaff', [UserController::class, 'createStaff']);
+});
 
 require __DIR__.'/auth.php';

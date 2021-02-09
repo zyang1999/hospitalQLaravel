@@ -18,9 +18,9 @@ class CreateUsersTable extends Migration
             $table->string('first_name')->nullable();
             $table->string('last_name')->nullable();
             $table->string('IC_no')->unique()->nullable();
-            $table->string('email')->unique();
+            $table->string('email')->unique()->nullable();
             $table->string('email_verified_at')->nullable();
-            $table->string('password');
+            $table->string('password')->nullable();
             $table->string('status')->default('UNVERIFIED');
             $table->string('gender')->nullable();
             $table->longtext('IC_image')->nullable();
