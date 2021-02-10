@@ -374,43 +374,91 @@ class UserController extends Controller
 
     public function createStaff(Request $request)
     {   
-        // $validator = Validator::make($request->all(),[
-        //     'email' => 'unique:users',
-        //     'IC_no' => 'unique:users|digits_between:12,12',
-        //     'telephone' => 'required|digits_between:10,11',
-        //     'image' => 'required'
-        // ], [
-        //     'IC_no.unique' => 'The IC number has been taken.' ,
-        //     'IC_no.digits_between' => 'The IC number has been taken.'
-        // ]);
+        $validator = Validator::make($request->all(),[
+            'email' => 'unique:users',
+            'IC_no' => 'unique:users|digits_between:12,12',
+            'telephone' => 'digits_between:10,11',
+        ], [
+            'IC_no.unique' => 'The IC number has been taken.' ,
+            'IC_no.digits_between' => 'The IC number should be exactly 12 characters long.'
+        ]);
 
-        // if($validator->fails()){
-        //     return response()->json([
-        //         'success' => false,
-        //         'message' => $validator->messages()
-        //     ]);
-        // }
-        
-        $imageDirectory = 'images/' . date('mdYHis') . uniqid() . '.png';
-        Storage::put($imageDirectory, $image);
+        if($validator->fails()){
+            return response()->json([
+                'success' => false,
+                'message' => $validator->messages()
+            ]);
+        }
 
-        // $user = User::create([
-        //     'first_name' => $request->firstName,
-        //     'last_name' => $request->lastName,
-        //     'gender' => $request->gender,
-        //     'telephone' => $request->telephone,
-        //     'home_address' => $request->homeAddress,
-        //     'IC_no' => $request->IC_no,
-        //     'status' => 'VERIFIED',
-        //     'role' => $request->role,
-        //     'email' => $request->email,
-        //     'password' => Hash::make($request->ic),
-        //     'email_verified_at' => 'VERIFIED',
-        //     'selfie' => $imageDirectory
-        // ]);
+        $path = $request->image->store('images');
+
+        $user = User::create([
+            'first_name' => $request->firstName,
+            'last_name' => $request->lastName,
+            'gender' => $request->gender,
+            'telephone' => $request->telephone,
+            'home_address' => $request->homeAddress,
+            'IC_no' => $request->IC_no,
+            'status' => 'VERIFIED',
+            'role' => $request->role,
+            'email' => $request->email,
+            'password' => Hash::make($request->ic),
+            'email_verified_at' => 'VERIFIED',
+            'selfie' => $path
+        ]);
+
+        if($request->role == 'DOCTOR'){
+            $specialty = new Specialty;
+            $specialty->specialty = $request->specialty;
+            $specialty->location = $request->location;
+            $user->specialty()->save($specialty);
+        }
 
         return response()->json([
-            'user' => $image
+            'success' => true,
+            'message' => 'New Staff is added successfully!'
+        ]);
+    }
+
+    public function editStaff(Request $request){
+        $validator = Validator::make($request->all(),[
+            'telephone' => 'digits_between:10,11',
+        ]);
+
+        if($validator->fails()){
+            return response()->json([
+                'success' =>false,
+                'message' => $validator->messages()
+            ]);
+        }
+
+        $user = User::find($request->id);
+        $user->first_name = $request->firstName;
+        $user->last_name = $request->lastName;
+        $user->telephone = $request->telephone;
+        $user->role = $request->role;
+        $user->home_address = $request->homeAddress;
+
+        if($request->role == 'DOCTOR'){
+            $specialty = $user->specialty;
+            $specialty->specialty = $request->specialty;
+            $specialty->location = $request->location;
+            $specialty->save();
+        }
+
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'The profile is updated successfully!'
+        ]);
+    }
+
+    public function removeStaff(Request $request){
+        User::find($request->id)->delete();
+        
+        return response()->json([
+            'message' => 'This account is remove successfully!'
         ]);
     }
 }

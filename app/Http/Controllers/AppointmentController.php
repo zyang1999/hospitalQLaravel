@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Appointment;
 use App\Models\AppointmentFeedback;
+use App\Models\Specialty;
+use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -43,7 +45,6 @@ class AppointmentController extends Controller
             'end_at' => $endAt,
             'specialty' => $specialty->specialty,
             'location' => $specialty->location,
-            'concern' => $request->concern,
             'status' => 'AVAILABLE'
         ]);
 
@@ -151,6 +152,7 @@ class AppointmentController extends Controller
     public function bookAppointment(Request $request){
         $appointment = Appointment::find($request->appointmentId);
         $appointment->status = 'BOOKED';
+        $appointment->concern = $request->concern;
         $request->user()->appointments()->save($appointment);
 
         $token = $appointment->doctor->fcm_token;
@@ -181,5 +183,55 @@ class AppointmentController extends Controller
 
     public function getAppointmentDetails (Request $request){
         return Appointment::find($request->appointmentId)->load(['patient', 'feedback', 'doctor']);
+    }
+
+    public function getAppointmentView(Request $request){
+        $specialties = Specialty::where('specialty', 'not like', 'Phamarcist')->pluck('specialty')->unique();
+        $doctors = User::where('role', 'DOCTOR')->get();
+
+        return view('appointment', [
+            'specialties' => $specialties,
+            'doctors' => $doctors
+        ]);
+    }
+
+    public function getAppointmentTable(Request $request){
+        $appointments = User::find($request->doctorId)->doctorAppointments()
+                            ->where('status', 'AVAILABLE')
+                            ->whereDate('date', '>', Carbon::today())
+                            ->get();
+        return view('/components/appointment-table', ['appointments' => $appointments]);
+    }
+
+    public function createAppointmentWeb(Request $request){
+    
+        $validator = Validator::make($request->all(),[
+            'first_name' => "regex:/^[a-z ,.'-]+$/i",
+            'last_name' => "regex:/^[a-z ,.'-]+$/i",
+            'telephone' => 'digits_between:10,11',
+        ]);
+
+        if($validator->fails()){
+            return response()->json([
+                'success' => false,
+                'message' => $validator->messages()
+            ]);
+        }
+
+        if($request->patientId == null){
+            $user = User::create($request->all());
+        }else{
+            $user = User::find($request->patientId);
+        }
+
+        $appointment = Appointment::find($request->appointmentId);
+        $appointment->status = 'BOOKED';
+        $appointment->concern = $request->concern;
+        $user->appointments()->save($appointment);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Appointment is booked successfully!'
+        ]);
     }
 }

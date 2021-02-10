@@ -8,14 +8,6 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div id="approveAlert" class="alert alert-primary alert-dismissible fade show" role="alert" style="display: none">
-                    <strong>Holy guacamole!</strong> You should check in on some of those fields below.
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-                <div id="rejectAlert" class="alert alert-danger alert-dismissible fade show" role="alert" style="display: none">
-                    <strong>Holy guacamole!</strong> You should check in on some of those fields below.
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
                 <div class="p-6 bg-white border-b border-gray-200">
                     <table class="table">
                         <thead>

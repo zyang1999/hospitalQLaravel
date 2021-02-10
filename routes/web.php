@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SpecialtyController;
 use App\Http\Controllers\QueueController;
-
+use App\Http\Controllers\AppointmentController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -34,6 +34,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/approveAccount', [UserController::class, 'approveAccount']);
     Route::post('/rejectAccount', [UserController::class, 'rejectAccount']);
     Route::post('/createStaff', [UserController::class, 'createStaff']);
+    Route::post('/editStaff', [UserController::class, 'editStaff']);
+    Route::post('/removeStaff', [UserController::class, 'removeStaff']);
+    Route::get('/appointment', [AppointmentController::class, 'getAppointmentView'])->name('appointment');
+    Route::get('/getAppointmentTable', [AppointmentController::class, 'getAppointmentTable']);
+    Route::post('/createAppointment', [AppointmentController::class, 'createAppointmentWeb']);
 });
 
 require __DIR__.'/auth.php';
