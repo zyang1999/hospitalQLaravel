@@ -26,7 +26,7 @@ class SpecialtyController extends Controller
 
     public function getSpecialtiesView (){
         $specialties = Specialty::where('specialty', 'not like', 'Phamarcist')->pluck('specialty')->unique();
-
+        
         return view('queue', ['specialties' => $specialties]);
         
     }

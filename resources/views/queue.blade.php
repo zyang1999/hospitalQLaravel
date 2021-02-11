@@ -127,12 +127,24 @@
                 var patient = JSON.parse(this.responseText).patient;
                 if (patient == null){
                     alert('Patient not found!');
+                    firstName.value = null;
+                    lastName.value = null;
+                    telephone.value = null;
+                    homeAddress.value = null;
+                    $("input[name=gender][value=Male]").prop('checked', true);
+                    
+                    firstName.disabled = false;
+                    lastName.disabled = false;
+                    telephone.disabled = false;
+                    homeAddress.disabled = false;
+                    document.getElementById('Male').disabled = false;
+                    document.getElementById('Female').disabled = false;
                 }else{
                     firstName.value = patient.first_name;
                     lastName.value = patient.last_name;
                     telephone.value = patient.telephone;
                     homeAddress.value = patient.home_address;
-                    var gender = document.getElementById(patient.gender);
+                    $("input[name=gender][value=" + patient.gender + "]").prop('checked', true);
 
                     firstName.disabled = true;
                     lastName.disabled = true;
@@ -171,11 +183,7 @@
     {
         var mywindow = window.open('', 'PRINT', 'height=400,width=600');
 
-        mywindow.document.write('<html><head><title>' + document.title  + '</title>');
-        mywindow.document.write('</head><body >');
-        mywindow.document.write('<h1>' + document.title  + '</h1>');
         mywindow.document.write(document.getElementById(elem).innerHTML);
-        mywindow.document.write('</body></html>');
 
         mywindow.document.close(); // necessary for IE >= 10
         mywindow.focus(); // necessary for IE >= 10*/

@@ -25,7 +25,7 @@ Route::middleware(['auth'])->group(function () {
         return view('dashboard');
     })->name('dashboard');
     
-    Route::get('/staff', [UserController::class, 'getStaffs'])->name('staff');
+    Route::get('/users', [UserController::class, 'getUsers'])->name('users');
     Route::get('/verification', [UserController::class, 'getUnverifiedPatients'])->name('verification');
     Route::get('/queue', [SpecialtyController::class, 'getSpecialtiesView'])->name('queue');
     Route::get('/user/{id}', [UserController::class, 'getUserDetails']);
@@ -33,12 +33,14 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/createQueue', [QueueController::class, 'createQueue']);
     Route::post('/approveAccount', [UserController::class, 'approveAccount']);
     Route::post('/rejectAccount', [UserController::class, 'rejectAccount']);
-    Route::post('/createStaff', [UserController::class, 'createStaff']);
-    Route::post('/editStaff', [UserController::class, 'editStaff']);
-    Route::post('/removeStaff', [UserController::class, 'removeStaff']);
+    Route::post('/createUser', [UserController::class, 'createUser']);
+    Route::post('/editUser', [UserController::class, 'editUser']);
+    Route::post('/removeUser', [UserController::class, 'removeUser']);
     Route::get('/appointment', [AppointmentController::class, 'getAppointmentView'])->name('appointment');
     Route::get('/getAppointmentTable', [AppointmentController::class, 'getAppointmentTable']);
     Route::post('/createAppointment', [AppointmentController::class, 'createAppointmentWeb']);
+    Route::post('/getDoctors', [UserController::class, 'getDoctorsWeb']);
+    Route::get('/getDoctorSpecialty', [UserController::class, 'getDoctorSpecialtyWeb']);
 });
 
 require __DIR__.'/auth.php';

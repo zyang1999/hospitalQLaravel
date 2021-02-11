@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Builder;
 use App\Models\User;
 use App\Models\Specialty;
 use App\Services\Mail;
@@ -301,11 +302,11 @@ class UserController extends Controller
         return view('email_verification');   
     }
 
-    public function getStaffs()
+    public function getUsers()
     {
-        $staffs = User::whereIn('role', ['DOCTOR', 'NURSE', 'ADMIN'])->get();
+        $users = User::all();
 
-        return view('staff', ['staffs' => $staffs]);
+        return view('users', ['users' => $users]);
     }
 
     public function getUserDetails($id)
@@ -363,16 +364,8 @@ class UserController extends Controller
             'user' => $user
         ]);
     }
-    public function base64_decode_if_needed($str)
-    {
-        $decoded = base64_decode($str, true);
-        if($str === base64_encode($decoded)) {
-            return $decoded;
-        }
-        return $str;
-    }
 
-    public function createStaff(Request $request)
+    public function createUser(Request $request)
     {   
         $validator = Validator::make($request->all(),[
             'email' => 'unique:users',
@@ -420,7 +413,7 @@ class UserController extends Controller
         ]);
     }
 
-    public function editStaff(Request $request){
+    public function editUser(Request $request){
         $validator = Validator::make($request->all(),[
             'telephone' => 'digits_between:10,11',
         ]);
@@ -454,11 +447,26 @@ class UserController extends Controller
         ]);
     }
 
-    public function removeStaff(Request $request){
-        User::find($request->id)->delete();
-        
+    public function removeUser(Request $request){
+        $user = User::find($request->id);
+        $user->status = 'INACTIVE';
+        $user->save();
+
         return response()->json([
-            'message' => 'This account is remove successfully!'
+            'message' => 'This account is set as inactive!'
         ]);
+    }
+
+    public function getDoctorsWeb(Request $request){
+        $doctors = User::whereHas('specialty', function(Builder $query) use($request){
+            $query->where('specialty', $request->specialty);
+        })->get();
+
+        return view('/components/doctor-select', ['doctors' => $doctors]);
+    }
+
+    public function getDoctorSpecialtyWeb(Request $request)
+    {
+        return response()->json(['specialty' => User::find($request->doctorId)->specialty->specialty]);
     }
 }

@@ -17,20 +17,14 @@
                                     <select class="form-select" aria-label="Default select example" name="specialty" id ="specialtySelect" required>
                                         <option selected value="">Select a specialty</option>
                                         @foreach ($specialties as $specialty)
-                                            <option value={{$specialty}}>{{$specialty}}</option>
+                                            <option value='{{$specialty}}'>{{$specialty}}</option>
                                         @endforeach
                                     </select>
                                 </div>
                             </div>
                             <div class="col">
-                                <div class="mb-3">
-                                    <label for="exampleFormControlInput1" class="form-label">Doctors</label>
-                                    <select class="form-select" aria-label="Default select example" name="doctorId" id ="specialtySelect" required>
-                                        <option selected value="">Select a doctor</option>
-                                        @foreach ($doctors as $doctor)
-                                            <option value={{$doctor->id}}>Dr. {{$doctor->full_name}}</option>
-                                        @endforeach
-                                    </select>
+                                <div class="mb-3" id="doctor-div">
+                                    @include('/components/doctor-select')
                                 </div>
                             </div>
                         </div> 
@@ -42,7 +36,7 @@
                             </div>
                         </div>
                     </form>
-                    <div id="appointment-table"></div>      
+                    <div id="appointment-div"></div>      
                 </div>
             </div>
         </div>
@@ -212,8 +206,25 @@
 
     $('#searchAppointmentForm').submit(function (event){
         event.preventDefault();
-        $('#appointment-table').load('./getAppointmentTable', $(this).serialize(), function(response) {
-            $('#appointment-table').html(response);
+        $('#appointment-div').load('./getAppointmentTable', $(this).serialize(), function(response) {
+            $('#appointment-div').html(response);
         });
     });
+
+    $('#specialtySelect').change(function(){           
+        $('#doctor-div').load('./getDoctors', {
+            specialty: $(this).val(),
+            _token: '{{ csrf_token() }}'
+        });
+    });
+
+    $('#doctorSelect').change(function(){
+        $.get('./getDoctorSpecialty', {
+            doctorId: $(this).val(),
+            _token: '{{ csrf_token() }}'
+        }, function (response){
+            $('#specialtySelect').val(response.specialty);
+        });           
+    });
+
 </script>

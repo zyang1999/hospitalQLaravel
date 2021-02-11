@@ -1,38 +1,39 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Staff List') }}
+            {{ __('User List') }}
         </h2>
     </x-slot>
-
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="container mb-3">
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStaffModal" >
-                    Create Staff
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal" >
+                    Create User
                 </button>
             </div> 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 bg-white border-b border-gray-200">
-                    <table class="table" id="staff-table">
+                    <table class="table table-striped" style="width:100%" id="staff-table">
                         <thead>
                           <tr>
                             <th scope="col">ID</th>
                             <th scope="col">First</th>
                             <th scope="col">Last</th>
+                            <th scope="col">IC</th>
                             <th scope="col">Role</th>
                             <th scope="col">Action</th>
                           </tr>
                         </thead>
                         <tbody>
-                            @foreach ($staffs as $staff)
+                            @foreach ($users as $user)
                                 <tr>
-                                <th scope="row">{{$staff->id}}</th>
-                                <td>{{$staff->first_name}}</td>
-                                <td>{{$staff->last_name}}</td>
-                                <td>{{$staff->role}}</td>
+                                <th scope="row">{{$user->id}}</th>
+                                <td>{{$user->first_name}}</td>
+                                <td>{{$user->last_name}}</td>
+                                <td>{{$user->IC_no}}</td>
+                                <td>{{$user->role}}</td>
                                 <td>
-                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editStaffModal" data-bs-id={{ $staff->id }}>
+                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editUserModal" data-bs-id={{ $user->id }}>
                                         Edit
                                     </button>
                                 </td>
@@ -46,7 +47,7 @@
     </div>
 
     <!-- Modal -->
-    <div class="modal fade" id="editStaffModal" tabindex="-1" aria-labelledby="editStaffModalLabel" aria-hidden="true">
+    <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="d-flex justify-content-center">
@@ -55,7 +56,7 @@
                     </div>
                 </div>
                 <div id="modal">
-                    <form id="editStaffForm">
+                    <form id="editUserForm">
                         <div class="modal-header">
                             <h3>Edit Profile</h3>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -111,6 +112,7 @@
                                         <option value="ADMIN">Admin</option>
                                         <option value="DOCTOR">Doctor</option>
                                         <option value="NURSE">Nurse</option>
+                                        <option value="PATIENT">Patient</option>
                                     </select>
                                 </div>
                                 <div class="col" id="specialtyDiv" style="display: none">
@@ -126,7 +128,7 @@
                             </div>
                             <div class="row align-items-start mt-3">
                                 <div class="col">
-                                    <label for="exampleFormControlInput1" class="form-label">Patient Home Address</label>
+                                    <label for="exampleFormControlInput1" class="form-label">Home Address</label>
                                     <textarea type="text" class="form-control" id="homeAddress" name="homeAddress" required></textarea>
                                 </div>
                             </div>
@@ -143,14 +145,14 @@
         </div>
     </div>
 
-    <div class="modal fade" id="createStaffModal" tabindex="-1" aria-labelledby="editStaffModalLabel" aria-hidden="true">
+    <div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
         <div class="modal-dialog">
           <div class="modal-content">
                 <div class="modal-header">
                     <h3>New Staff</h3>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="createStaffForm" >
+                <form id="createUserForm" >
                     <div class="modal-body">
                         <div class="row align-items-start">
                             <div class="mb-3">
@@ -205,6 +207,7 @@
                                     <option value="ADMIN">Admin</option>
                                     <option value="DOCTOR">Doctor</option>
                                     <option value="NURSE">Nurse</option>
+                                    <option value="PATIENT">Patient</option>
                                 </select>
                             </div>
                             <div class="col" id="createSpecialtyDiv" style="display: none">
@@ -220,7 +223,7 @@
                         </div>
                         <div class="row align-items-start mt-3">
                             <div class="col">
-                                <label for="exampleFormControlInput1" class="form-label">Patient Home Address</label>
+                                <label for="exampleFormControlInput1" class="form-label">Home Address</label>
                                 <textarea type="text" class="form-control" name="homeAddress" required></textarea>
                             </div>
                         </div>
@@ -236,13 +239,13 @@
 </x-app-layout>
 
 <script>
-    var editStaffModal = document.getElementById('editStaffModal')
+    var editUserModal = document.getElementById('editUserModal')
 
-    editStaffModal.addEventListener('show.bs.modal', function (event) {
+    editUserModal.addEventListener('show.bs.modal', function (event) {
 
         var button = event.relatedTarget;
         var id = button.getAttribute('data-bs-id');
-        var profilePicture = editStaffModal.querySelector('.modal-body img')
+        var profilePicture = editUserModal.querySelector('.modal-body img')
         var firstName = document.getElementById("first-name")
         var lastName = document.getElementById("last-name") 
         var email = document.getElementById("email")
@@ -345,7 +348,7 @@
         }
     }
 
-    $("#createStaffForm").submit(function(e) {     
+    $("#createUserForm").submit(function(e) {     
         e.preventDefault(); 
 
         var formData = new FormData(this);
@@ -355,7 +358,7 @@
 
         $.ajax({
             type: "POST",
-            url: "./createStaff",
+            url: "./createUser",
             data: formData,
             contentType: false,
             processData: false,
@@ -363,7 +366,7 @@
             {
                 if(data.success == true){
                     alert('New Staff is created successfully!');
-                    $("#createStaffForm").modal('hide');
+                    $("#createUserForm").modal('hide');
                     location.reload();
                 }else{
                     data.message.IC_no && alert(data.message.IC_no);
@@ -374,7 +377,7 @@
         });
     });
 
-    $("#editStaffForm").submit(function(e) {     
+    $("#editUserForm").submit(function(e) {     
         e.preventDefault(); 
 
         var formData = new FormData(this);
@@ -382,7 +385,7 @@
 
         $.ajax({
             type: "POST",
-            url: "./editStaff",
+            url: "./editUser",
             data: formData,
             contentType: false,
             processData: false,
@@ -401,7 +404,7 @@
     $('#removeButton').click(function(){
         $.ajax({
             type:'POST',
-            url: "./removeStaff",
+            url: "./removeUser",
             data: {
                 id: $('#userId').val(),
                 _token: '{{ csrf_token() }}'
