@@ -55,6 +55,16 @@ class UserController extends Controller
         }
     }
 
+    public function logout(Request $request){
+        $user = $request->user();
+        $user->fcm_token = null;
+        $user->save();
+
+        return response()->json([
+            'user' => $user
+        ]);
+    }
+
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -285,8 +295,6 @@ class UserController extends Controller
         $user = $request->user();
         $user->fcm_token = $request->token;
         $user->save();
-        
-        $this->FCMCloudMessaging->sendFCM($user->fcm_token);
 
         return response()->json([
             'token' => $user->fcm_token
@@ -304,7 +312,7 @@ class UserController extends Controller
 
     public function getUsers()
     {
-        $users = User::all();
+        $users = User::where('status', 'VERIFIED')->get();
 
         return view('users', ['users' => $users]);
     }
@@ -325,7 +333,7 @@ class UserController extends Controller
 
     public function getUserWithIC($ic){
         return response()->json([
-            'patient' => User::where('IC_no', $ic)->first()
+            'patient' => User::where('IC_no', $ic)->where('status', 'VERIFIED')->first()
         ]);
     }
 

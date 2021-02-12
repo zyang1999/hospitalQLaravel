@@ -5,6 +5,9 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\SpecialtyController;
 use App\Http\Controllers\QueueController;
 use App\Http\Controllers\AppointmentController;
+use App\Models\Queue;
+use App\Models\User;
+use Carbon\Carbon;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -16,13 +19,14 @@ use App\Http\Controllers\AppointmentController;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::redirect('/', '/login');
+
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', function () {
-        return view('dashboard');
+        $queueCount = Queue::whereDate('created_at', Carbon::today())->where('status', 'not like', 'CANCELLED')->count();
+        $userCount = User::where('status', 'VERIFYING')->count();
+        return view('dashboard', ['queueCount' => $queueCount, 'userCount' => $userCount]);
     })->name('dashboard');
     
     Route::get('/users', [UserController::class, 'getUsers'])->name('users');
