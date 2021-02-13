@@ -19,219 +19,273 @@ class AppointmentController extends Controller
         $this->FCMCloudMessaging = $FCMCloudMessaging;
     }
 
-    public function createAppointment(Request $request){
-        $date = Carbon::parse($request->date)->setTimeZone('Asia/Kuala_Lumpur');
+    public function createAppointment(Request $request)
+    {
+        $date = Carbon::parse($request->date)->setTimeZone("Asia/Kuala_Lumpur");
         $dateString = $date->toDateString();
         $startAt = $date->toTimeString();
         $endAt = $date->addMinutes(30)->toTimeString();
         $specialty = $request->user()->specialty;
-        
-        $duplicate = $request->user()->doctorAppointments()
-                        ->where('date', $dateString)   
-                        ->where('start_at', $startAt)
-                        ->where('specialty', $specialty->specialty)
-                        ->get();
 
-        if($duplicate->count() != 0){
+        $duplicate = $request
+            ->user()
+            ->doctorAppointments()
+            ->where("date", $dateString)
+            ->where("start_at", $startAt)
+            ->where("specialty", $specialty->specialty)
+            ->get();
+
+        if ($duplicate->count() != 0) {
             return response()->json([
-                'sucesss' => false,
-                'message' => ['error' => 'Duplicated Appointment Found!']
+                "sucesss" => false,
+                "message" => ["error" => "Duplicated Appointment Found!"],
             ]);
         }
 
-        $appointment = $request->user()->doctorAppointments()->create([
-            'date'=> $dateString,
-            'start_at' => $startAt,
-            'end_at' => $endAt,
-            'specialty' => $specialty->specialty,
-            'location' => $specialty->location,
-            'status' => 'AVAILABLE'
-        ]);
+        $appointment = $request
+            ->user()
+            ->doctorAppointments()
+            ->create([
+                "date" => $dateString,
+                "start_at" => $startAt,
+                "end_at" => $endAt,
+                "specialty" => $specialty->specialty,
+                "location" => $specialty->location,
+                "status" => "AVAILABLE",
+            ]);
 
         return response()->json([
-            'success' => true,
-            'message' => 'Appointment is added successfully',
-            'appointment' => $appointment
+            "success" => true,
+            "message" => "Appointment is added successfully",
+            "appointment" => $appointment,
         ]);
     }
 
-    public function getDoctorAppointmentsToday(Request $request){
-        $appointments = $request->user()->doctorAppointments()->whereDate('date', Carbon::today())->get()->load(['patient', 'feedback','feedback']);
+    public function getDoctorAppointmentsToday(Request $request)
+    {
+        $appointments = $request
+            ->user()
+            ->doctorAppointments()
+            ->whereDate("date", Carbon::today())
+            ->get()
+            ->load(["patient", "feedback", "feedback"]);
 
         return response()->json([
-            'appointments' =>$appointments
+            "appointments" => $appointments,
         ]);
     }
 
-    public function completeAppointment (Request $request){
+    public function completeAppointment(Request $request)
+    {
         $appointment = Appointment::find($request->id);
-        $appointment->status = 'COMPLETED';
+        $appointment->status = "COMPLETED";
         $appointment->save();
 
         return response()->json([
-            'success' => true,
-            'message' => 'Appointment status updated successfully'
+            "success" => true,
+            "message" => "Appointment status updated successfully",
         ]);
     }
 
-    public function deleteAppointment(Request $request){
+    public function deleteAppointment(Request $request)
+    {
         $appointment = Appointment::find($request->id);
-        if($appointment->patient_id !== null){
+        if ($appointment->patient_id !== null) {
+            $message = ["feedback.required" => "The reason field is required."];
 
-            $message = ['feedback.required' => 'The reason field is required.'];
+            $validator = Validator::make(
+                $request->all(),
+                [
+                    "feedback" => "required",
+                ],
+                $message
+            );
 
-            $validator = Validator::make($request->all(),[
-                'feedback' => 'required'
-            ], $message);
-                
-            if($validator->fails()){
+            if ($validator->fails()) {
                 return response()->json([
-                    'success' => false,
-                    'message' => $validator->messages()
+                    "success" => false,
+                    "message" => $validator->messages(),
                 ]);
             }
 
-            $appointment->status = 'CANCELLED';
+            $appointment->status = "CANCELLED";
             $appointment->save();
-            
-            $feedback = new AppointmentFeedback;
+
+            $feedback = new AppointmentFeedback();
             $feedback->feedback = $request->feedback;
             $appointment->feedback()->save($feedback);
 
             $token = $appointment->patient->fcm_token;
-            $title = 'Appointment';
-            $body = 'DR. ' . $request->user()->full_name . ' has cancalled your appointment.';
+            $title = "Appointment";
+            $body =
+                "DR. " .
+                $request->user()->full_name .
+                " has cancalled your appointment.";
             $data = [
-                'tab' => 'HistoryStack', 
-                'screen'=>'AppointmentDetails',
-                'appointmentId' => $appointment->id
+                "tab" => "HistoryStack",
+                "screen" => "AppointmentDetails",
+                "appointmentId" => $appointment->id,
             ];
 
             $this->FCMCloudMessaging->sendFCM($token, $title, $body, $data);
-
-        }else{  
+        } else {
             $appointment->delete();
         }
-        
+
         return response()->json([
-            'success' => true,
-            'message' => 'Appointment is deleted successfully'
+            "success" => true,
+            "message" => "Appointment is deleted successfully",
         ]);
     }
 
-    public function getDoctorAppointments(Request $request){
-        $allAppointments = $request->user()->doctorAppointments->makeHidden(['doctor', 'patient'])
-                            ->sortBy('start_at')
-                            ->groupBy(function ($item){
-                                return($item->date->format('Y-m-d'));
-                            });
-        
+    public function getDoctorAppointments(Request $request)
+    {
+        $allAppointments = $request
+            ->user()
+            ->doctorAppointments->makeHidden(["doctor", "patient"])
+            ->sortBy("start_at")
+            ->groupBy('date');
+
         return response()->json([
-            'allAppointments' => $allAppointments
+            "allAppointments" => $allAppointments,
         ]);
     }
 
-    public function getAvailableDate(Request $request){
-        $appointments = Appointment::where('doctor_id', $request->doctorId)
-            ->whereDate('date', '>' , Carbon::today())
-            ->pluck('date');
-        
+    public function getAvailableDate(Request $request)
+    {
+        $appointments = Appointment::where("doctor_id", $request->doctorId)
+            ->whereDate("date", ">", Carbon::today())
+            ->pluck("date");
+
         return response()->json([
-            'appointments' => $appointments
+            "appointments" => $appointments,
         ]);
     }
 
-    public function getSchedule(Request $request){
-        $scheuldes = Appointment::where('doctor_id', $request->doctorId)->where('date', $request->date)->get();
+    public function getSchedule(Request $request)
+    {
+        $scheuldes = Appointment::where("doctor_id", $request->doctorId)
+            ->where("date", $request->date)
+            ->get();
 
         return response()->json([
-            'schedules' => $scheuldes
+            "schedules" => $scheuldes,
         ]);
     }
 
-    public function bookAppointment(Request $request){
+    public function bookAppointment(Request $request)
+    {
         $appointment = Appointment::find($request->appointmentId);
-        $appointment->status = 'BOOKED';
+        $appointment->status = "BOOKED";
         $appointment->concern = $request->concern;
-        $request->user()->appointments()->save($appointment);
+        $request
+            ->user()
+            ->appointments()
+            ->save($appointment);
 
         $token = $appointment->doctor->fcm_token;
-        $title = 'Appointment';
-        $body = $request->user()->full_name . ' has booked an appointment from you.';
+        $title = "Appointment";
+        $body =
+            $request->user()->full_name .
+            " has booked an appointment from you.";
         $data = [
-            'type' => 'AppointmentBooking',
-            'appointmentId' => $appointment->id
+            "type" => "AppointmentBooking",
+            "appointmentId" => $appointment->id,
         ];
-        
+
         $this->FCMCloudMessaging->sendFCM($token, $title, $body, $data);
 
         return response()->json([
-            'success' => true,
-            'appointment' => $appointment
+            "success" => true,
+            "appointment" => $appointment,
         ]);
     }
 
-    public function getAppointment (Request $request){
-        $appointments = $request->user()->appointments()->where('status', 'BOOKED')->oldest('date')->get()->load(['doctor']);
-        $appointmentToday = $request->user()->appointments()->where('status', 'BOOKED')->whereDate('date', Carbon::today())->first();
-        
+    public function getAppointment(Request $request)
+    {
+        $appointments = $request
+            ->user()
+            ->appointments()
+            ->where("status", "BOOKED")
+            ->oldest("date")
+            ->get()
+            ->load(["doctor"]);
+        $appointmentToday = $request
+            ->user()
+            ->appointments()
+            ->where("status", "BOOKED")
+            ->whereDate("date", Carbon::today())
+            ->first();
+
         return response()->json([
-            'appointmentToday' => $appointmentToday,
-            'appointments' => $appointments
+            "appointmentToday" => $appointmentToday,
+            "appointments" => $appointments,
         ]);
     }
 
-    public function getAppointmentDetails (Request $request){
-        return Appointment::find($request->appointmentId)->load(['patient', 'feedback', 'doctor']);
-    }
-
-    public function getAppointmentView(Request $request){
-        $specialties = Specialty::where('specialty', 'not like', 'Phamarcist')->pluck('specialty')->unique();
-        $doctors = User::where('role', 'DOCTOR')->get();
-
-        return view('appointment', [
-            'specialties' => $specialties,
-            'doctors' => $doctors
+    public function getAppointmentDetails(Request $request)
+    {
+        return Appointment::find($request->appointmentId)->load([
+            "patient",
+            "feedback",
+            "doctor",
         ]);
     }
 
-    public function getAppointmentTable(Request $request){
-        $appointments = User::find($request->doctorId)->doctorAppointments()
-                            ->where('status', 'AVAILABLE')
-                            ->whereDate('date', '>', Carbon::today())
-                            ->get();
-        return view('/components/appointment-table', ['appointments' => $appointments]);
+    public function getAppointmentView(Request $request)
+    {
+        $specialties = Specialty::where("specialty", "not like", "Phamarcist")
+            ->pluck("specialty")
+            ->unique();
+        $doctors = User::where("role", "DOCTOR")->get();
+
+        return view("appointment", [
+            "specialties" => $specialties,
+            "doctors" => $doctors,
+        ]);
     }
 
-    public function createAppointmentWeb(Request $request){
-    
-        $validator = Validator::make($request->all(),[
-            'first_name' => "regex:/^[a-z ,.'-]+$/i",
-            'last_name' => "regex:/^[a-z ,.'-]+$/i",
-            'telephone' => 'digits_between:10,11',
+    public function getAppointmentTable(Request $request)
+    {
+        $appointments = User::find($request->doctorId)
+            ->doctorAppointments()
+            ->where("status", "AVAILABLE")
+            ->whereDate("date", ">", Carbon::today())
+            ->get();
+        return view("/components/appointment-table", [
+            "appointments" => $appointments,
+        ]);
+    }
+
+    public function createAppointmentWeb(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            "first_name" => "regex:/^[a-z ,.'-]+$/i",
+            "last_name" => "regex:/^[a-z ,.'-]+$/i",
+            "telephone" => "digits_between:10,11",
         ]);
 
-        if($validator->fails()){
+        if ($validator->fails()) {
             return response()->json([
-                'success' => false,
-                'message' => $validator->messages()
+                "success" => false,
+                "message" => $validator->messages(),
             ]);
         }
 
-        if($request->patientId == null){
+        if ($request->patientId == null) {
             $user = User::create($request->all());
-        }else{
+        } else {
             $user = User::find($request->patientId);
         }
 
         $appointment = Appointment::find($request->appointmentId);
-        $appointment->status = 'BOOKED';
+        $appointment->status = "BOOKED";
         $appointment->concern = $request->concern;
         $user->appointments()->save($appointment);
 
         return response()->json([
-            'success' => true,
-            'message' => 'Appointment is booked successfully!'
+            "success" => true,
+            "message" => "Appointment is booked successfully!",
         ]);
     }
 }

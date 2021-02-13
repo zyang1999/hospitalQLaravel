@@ -40,6 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('changePassword', [UserController::class, 'changePassword']);
     Route::post('changeProfileImage', [UserController::class, 'changeProfileImage']);
     Route::post('changePhoneNumber', [UserController::class, 'changePhoneNumber']);
+    Route::post('changeHomeAddress', [UserController::class, 'changeHomeAddress']);
     
     //History
     Route::get('/getHistory', [UserController::class, 'getHistory']);

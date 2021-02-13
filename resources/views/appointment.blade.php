@@ -14,10 +14,11 @@
                             <div class="col">
                                 <div class="mb-3">
                                     <label for="exampleFormControlInput1" class="form-label">Specialties</label>
-                                    <select class="form-select" aria-label="Default select example" name="specialty" id ="specialtySelect" required>
+                                    <select class="form-select" aria-label="Default select example" name="specialty"
+                                        id="specialtySelect" required>
                                         <option selected value="">Select a specialty</option>
                                         @foreach ($specialties as $specialty)
-                                            <option value='{{$specialty}}'>{{$specialty}}</option>
+                                            <option value='{{ $specialty }}'>{{ $specialty }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -27,22 +28,24 @@
                                     @include('/components/doctor-select')
                                 </div>
                             </div>
-                        </div> 
+                        </div>
                         <div class="row align-items-start">
                             <div class="col">
                                 <div class="mb-3">
-                                    <button type="submit" class="btn btn-primary" id="search-appointment-button">Search Appointment</button> 
-                                </div>  
+                                    <button type="submit" class="btn btn-primary" id="search-appointment-button">Search
+                                        Appointment</button>
+                                </div>
                             </div>
                         </div>
                     </form>
-                    <div id="appointment-div"></div>      
+                    <div id="appointment-div"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="patientModal" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div id="patientModal" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="staticBackdropLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -59,16 +62,17 @@
                                     <input type="number" class="form-control" id="ic" name="IC_no" required>
                                 </div>
                                 <div class="mb-3 ms-3">
-                                    <button type="button" class="btn btn-primary" onclick="searchPatient()">Search Patient</button> 
+                                    <button type="button" class="btn btn-primary" onclick="searchPatient()">Search
+                                        Patient</button>
                                 </div>
-                            </div> 
+                            </div>
                         </div>
-                        <div class="row align-items-start">  
+                        <div class="row align-items-start">
                             <div class="col">
                                 <div class="mb-3 ">
                                     <label for="exampleFormControlInput1" class="form-label">Patient First Name</label>
                                     <input type="text" class="form-control" id="firstName" name="first_name" required>
-                                </div>                            
+                                </div>
                             </div>
                             <div class="col">
                                 <div class="mb-3">
@@ -82,29 +86,32 @@
                                 <div class="mb-3">
                                     <label for="exampleFormControlInput1" class="form-label">Patient Telephone</label>
                                     <input type="tel" class="form-control" id="telephone" name="telephone" required>
-                                </div>                            
+                                </div>
                             </div>
                             <div class="col">
                                 <div class="mb-3">
                                     <label for="exampleFormControlInput1" class="form-label">Patient Gender</label>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" id="Male" value="Male" name="gender" checked>
+                                        <input class="form-check-input" type="radio" id="Male" value="Male"
+                                            name="gender" checked>
                                         <label class="form-check-label" for="flexRadioDefault1">
-                                        Male
+                                            Male
                                         </label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" id="Female" name="gender" value="Female" >
+                                        <input class="form-check-input" type="radio" id="Female" name="gender"
+                                            value="Female">
                                         <label class="form-check-label" for="flexRadioDefault2">
-                                        Female
+                                            Female
                                         </label>
                                     </div>
                                 </div>
                             </div>
-                        </div>             
+                        </div>
                         <div class="mb-3">
                             <label for="exampleFormControlInput1" class="form-label">Patient Home Address</label>
-                            <textarea type="text" class="form-control" id="homeAddress" name="home_address" required></textarea>
+                            <textarea type="text" class="form-control" id="homeAddress" name="home_address"
+                                required></textarea>
                         </div>
                         <div class="mb-3">
                             <label for="exampleFormControlInput1" class="form-label">Patient Concern (Optional)</label>
@@ -115,7 +122,7 @@
                     <input type="hidden" name="patientId" id="patientId">
                     <input type="hidden" name="appointmentId" id="appointmentId">
                     <div class="modal-footer">
-                        <button type="submit" class="btn btn-primary" >Book</button>
+                        <button type="submit" class="btn btn-primary">Book</button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     </div>
                 </form>
@@ -127,14 +134,14 @@
 <script>
     var patientModal = document.getElementById('patientModal');
 
-    patientModal.addEventListener('show.bs.modal', function (event) {
+    patientModal.addEventListener('show.bs.modal', function(event) {
         var button = event.relatedTarget;
         var appointmentId = button.getAttribute('data-bs-id');
         $('#appointmentId').val(appointmentId);
         $('#role').val('PATIENT');
     });
 
-    function searchPatient(){
+    function searchPatient() {
         var IC = document.getElementById("ic").value;
         var firstName = document.getElementById("firstName");
         var lastName = document.getElementById("lastName");
@@ -142,14 +149,14 @@
         var homeAddress = document.getElementById("homeAddress");
         var patientId = document.getElementById("patientId");
 
-        if(IC == ''){
+        if (IC == '') {
             alert('Please enter an IC number before searching')
         }
         var xhttp = new XMLHttpRequest();
         xhttp.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200) {
                 var patient = JSON.parse(this.responseText).patient;
-                if (patient == null){
+                if (patient == null) {
                     alert('Patient not found!');
                     firstName.disabled = false;
                     lastName.disabled = false;
@@ -165,7 +172,7 @@
                     patientId.value = null;
                     $("input[name=gender][value=Male]").prop('checked', true);
 
-                }else{
+                } else {
                     firstName.value = patient.first_name;
                     lastName.value = patient.last_name;
                     telephone.value = patient.telephone;
@@ -177,54 +184,54 @@
                     lastName.disabled = true;
                     telephone.disabled = true;
                     homeAddress.disabled = true;
-                    
+
                     document.getElementById('Male').disabled = true;
                     document.getElementById('Female').disabled = true;
                 }
             }
         };
-        xhttp.open("GET", "./getUserWithIC/" + IC , true);
+        xhttp.open("GET", "./getUserWithIC/" + IC, true);
         xhttp.send();
     }
 
-    $('#patientForm').submit(function (event){
+    $('#patientForm').submit(function(event) {
         event.preventDefault();
 
         $.ajax({
-            method:'POST',
+            method: 'POST',
             url: './createAppointment',
             data: $(this).serialize()
-        }).done(function (response){
-            if(response.success){
+        }).done(function(response) {
+            if (response.success) {
                 alert(response.message);
-            }else{
+            } else {
                 alert(Object.values(response.message).join("\n"));
             }
             location.reload();
         });
     })
 
-    $('#searchAppointmentForm').submit(function (event){
+    $('#searchAppointmentForm').submit(function(event) {
         event.preventDefault();
         $('#appointment-div').load('./getAppointmentTable', $(this).serialize(), function(response) {
             $('#appointment-div').html(response);
         });
     });
 
-    $('#specialtySelect').change(function(){           
+    $('#specialtySelect').change(function() {
         $('#doctor-div').load('./getDoctors', {
             specialty: $(this).val(),
             _token: '{{ csrf_token() }}'
         });
     });
 
-    $('#doctorSelect').change(function(){
+    $('#doctorSelect').change(function() {
         $.get('./getDoctorSpecialty', {
             doctorId: $(this).val(),
             _token: '{{ csrf_token() }}'
-        }, function (response){
+        }, function(response) {
             $('#specialtySelect').val(response.specialty);
-        });           
+        });
     });
 
 </script>

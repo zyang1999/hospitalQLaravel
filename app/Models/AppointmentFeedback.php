@@ -9,7 +9,8 @@ class AppointmentFeedback extends Model
 {
     use HasFactory;
 
-    public function appointment (){
+    public function appointment()
+    {
         return $this->belongsTo(Appointment::class);
     }
 }

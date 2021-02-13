@@ -24,23 +24,23 @@ class QueueController extends Controller
 
     public function joinQueue(Request $request)
     {
+        $doctorId = Specialty::where("specialty", $request->specialty)
+            ->get()
+            ->sortBy(function ($queue) {
+                return count($queue->user->staffQueues);
+            })
+            ->pluck("user.id")
+            ->values()
+            ->all();
 
-        $doctorId = Specialty::where('specialty', $request->specialty)
-                        ->get()
-                        ->sortBy(function ($queue){
-                            return count($queue->user->staffQueues);
-                        })
-                        ->pluck('user.id')
-                        ->values()
-                        ->all();
-        
         $doctor = User::find($doctorId[0]);
         $location = $doctor->specialty->location;
 
-        $queue = new Queue;
-        $queue_no = (int)Queue::where('specialty', $request->specialty)
-                        ->whereDate('created_at', Carbon::today())
-                        ->max('queue_no') + 1;
+        $queue = new Queue();
+        $queue_no =
+            (int) Queue::where("specialty", $request->specialty)
+                ->whereDate("created_at", Carbon::today())
+                ->max("queue_no") + 1;
         $queue->queue_no = sprintf("%04d", $queue_no);
         $queue->status = "WAITING";
         $queue->location = $location;
@@ -48,19 +48,27 @@ class QueueController extends Controller
         $queue->specialty = $request->specialty;
         $queue->concern = $request->concern;
 
-        $request->user()->queues()->save($queue);
-        
-        $title = 'New Patient';
-        $body =  $request->user()->full_name.' has joined the queue';
+        $request
+            ->user()
+            ->queues()
+            ->save($queue);
+
+        $title = "New Patient";
+        $body = $request->user()->full_name . " has joined the queue";
         $data = [
-            'route' => 'Staff',
-            'type' => 'refreshQueue'
+            "route" => "Staff",
+            "type" => "refreshQueue",
         ];
 
-        $this->FCMCloudMessaging->sendFCM($doctor->fcm_token, $title, $body, $data);
+        $this->FCMCloudMessaging->sendFCM(
+            $doctor->fcm_token,
+            $title,
+            $body,
+            $data
+        );
 
         return response()->json([
-            'queue' => $queue
+            "queue" => $queue,
         ]);
     }
 
@@ -74,85 +82,119 @@ class QueueController extends Controller
             $prevQueue = Queue::find($request->queue_id);
             $prevQueue->status = "COMPLETED";
             $prevQueue->save();
-            if ($role == 'DOCTOR') {
-                $queue = new Queue;
-                $queue_no = (int)Queue::where('specialty', 'Phamarcy')
-                                ->whereDate('created_at', Carbon::today())
-                                ->max('queue_no') + 1;
+            if ($role == "DOCTOR") {
+                $queue = new Queue();
+                $queue_no =
+                    (int) Queue::where("specialty", "Phamarcy")
+                        ->whereDate("created_at", Carbon::today())
+                        ->max("queue_no") + 1;
                 $queue->queue_no = sprintf("%04d", $queue_no);
                 $queue->status = "WAITING";
-                $queue->specialty = 'Phamarcy';
+                $queue->specialty = "Phamarcy";
                 $queue->user_id = $prevQueue->user_id;
                 $queue->save();
             }
         }
 
-        if($role == 'DOCTOR'){
-            $nextQueue = $request->user()->getDoctorPendingQueues()->where('status', 'WAITING')->first()->makeHidden('doctor');
-            $nextPatient = $request->user()->getDoctorPendingQueues()->where('status', 'WAITING')->skip(1)->take(1)->first();
-        }else if($role == 'NURSE'){
-            $nextQueue = $request->user()->getNursePendingQueues()->where('status', 'WAITING')->first()->makeHidden('doctor');
-            $nextPatient = $request->user()->getNursePendingQueues()->where('status', 'WAITING')->skip(1)->take(1)->first();
-            if($nextQueue != null){
+        if ($role == "DOCTOR") {
+            $nextQueue = $request
+                ->user()
+                ->getDoctorPendingQueues()
+                ->where("status", "WAITING")
+                ->first()
+                ->makeHidden("doctor");
+            $nextPatient = $request
+                ->user()
+                ->getDoctorPendingQueues()
+                ->where("status", "WAITING")
+                ->skip(1)
+                ->take(1)
+                ->first();
+        } elseif ($role == "NURSE") {
+            $nextQueue = $request
+                ->user()
+                ->getNursePendingQueues()
+                ->where("status", "WAITING")
+                ->first()
+                ->makeHidden("doctor");
+            $nextPatient = $request
+                ->user()
+                ->getNursePendingQueues()
+                ->where("status", "WAITING")
+                ->skip(1)
+                ->take(1)
+                ->first();
+            if ($nextQueue != null) {
                 $nextQueue->served_by = $request->user()->id;
                 $nextQueue->location = $request->user()->specialty->location;
-            }      
+            }
         }
 
         if ($nextQueue != null) {
             $nextQueue->status = "SERVING";
-            $waitingTime = Carbon::parse($nextQueue->created_at)->diffInSeconds(Carbon::now());
+            $waitingTime = Carbon::parse($nextQueue->created_at)->diffInSeconds(
+                Carbon::now()
+            );
             $nextQueue->waiting_time = $waitingTime;
             $nextQueue->save();
 
             $token = $nextQueue->patient->fcm_token;
-            $title = 'Queue Status';
-            $body = 'Is your turn now! Please meet your doctor at Room'. $nextQueue->location;
+            $title = "Queue Status";
+            $body =
+                "Is your turn now! Please meet your doctor at Room" .
+                $nextQueue->location;
             $data = [
-                'route' => 'Patient',
-                'type' => 'refreshQueue'
+                "route" => "Patient",
+                "type" => "refreshQueue",
             ];
 
             $this->FCMCloudMessaging->sendFCM($token, $title, $body, $data);
         }
 
-        if ($nextPatient != null){
+        if ($nextPatient != null) {
             $token = $nextPatient->patient->fcm_token;
-            $title = 'Queue Status';
-            $body = '1 patient until your turn, please get ready!';
+            $title = "Queue Status";
+            $body = "1 patient until your turn, please get ready!";
             $data = [
-                'route' => 'Patient',
-                'type' => 'refreshQueue'
+                "route" => "Patient",
+                "type" => "refreshQueue",
             ];
-    
-            $this->FCMCloudMessaging->sendFCM($nextPatientToken, $title, $body, $data);
-        } 
-    
+
+            $this->FCMCloudMessaging->sendFCM(
+                $nextPatientToken,
+                $title,
+                $body,
+                $data
+            );
+        }
+
         return response()->json([
-            'prev_queue' => $prevQueue,
-            'next_queue' => $nextQueue
+            "prev_queue" => $prevQueue,
+            "next_queue" => $nextQueue,
         ]);
     }
 
-    public function stopQueue(Request $request){
+    public function stopQueue(Request $request)
+    {
         $currentQueue = Queue::find($request->queue_id);
         $currentQueue->status = "COMPLETED";
         $currentQueue->save();
-        if ($request->user()->role == 'DOCTOR') {
-            $queue = new Queue;
-            $queue_no = (int)Queue::where('specialty', 'Phamarcy')
-                            ->whereDate('created_at', Carbon::today())
-                            ->max('queue_no') + 1;
+        if ($request->user()->role == "DOCTOR") {
+            $queue = new Queue();
+            $queue_no =
+                (int) Queue::where("specialty", "Phamarcy")
+                    ->whereDate("created_at", Carbon::today())
+                    ->max("queue_no") + 1;
             $queue->queue_no = sprintf("%04d", $queue_no);
             $queue->status = "WAITING";
-            $queue->specialty = 'Phamarcy';
+            $queue->specialty = "Phamarcy";
             $queue->user_id = $currentQueue->user_id;
             $queue->save();
         }
 
         return response()->json([
-            'currentQueue' => $currentQueue,
-            'newQueue' => $queue
+            "currentQueue" => $currentQueue,
+            "newQueue" => $queue,
         ]);
     }
 
@@ -160,16 +202,19 @@ class QueueController extends Controller
     {
         $allQueue = null;
 
-        $userQueue = $request->user()->queues()
-                        ->where('status', 'WAITING')
-                        ->orwhere('status', 'SERVING')
-                        ->latest()->first();
-        if($userQueue != null){
-            $userQueue->append('time_range', 'number_of_patients');
+        $userQueue = $request
+            ->user()
+            ->queues()
+            ->where("status", "WAITING")
+            ->orwhere("status", "SERVING")
+            ->latest()
+            ->first();
+        if ($userQueue != null) {
+            $userQueue->append("time_range", "number_of_patients");
         }
         return response()->json([
-            'user' => $request->user(),
-            'userQueue' => $userQueue
+            "user" => $request->user(),
+            "userQueue" => $userQueue,
         ]);
     }
 
@@ -180,29 +225,34 @@ class QueueController extends Controller
         $user = $request->user();
 
         switch ($user->role) {
-            case 'PATIENT':
-                $queue = $user->queues()->latest()->first();
-                if($queue->specialty == 'Phamarcy'){
+            case "PATIENT":
+                $queue = $user
+                    ->queues()
+                    ->latest()
+                    ->first();
+                if ($queue->specialty == "Phamarcy") {
                     $allQueue = $user->getNursePendingQueues();
-                }else{
-                    $allQueue = User::find($queue->served_by)->getDoctorPendingQueues();
-                }     
+                } else {
+                    $allQueue = User::find(
+                        $queue->served_by
+                    )->getDoctorPendingQueues();
+                }
                 break;
 
-            case 'DOCTOR':
+            case "DOCTOR":
                 $allQueue = $user->getDoctorPendingQueues();
                 $currentQueue = $user->getCurrentServing();
                 break;
 
-            case 'NURSE':
+            case "NURSE":
                 $allQueue = $user->getNursePendingQueues();
                 $currentQueue = $user->getCurrentServing();
                 break;
         }
 
         return response()->json([
-            'allQueue' => $allQueue,
-            'currentQueue' => $currentQueue
+            "allQueue" => $allQueue,
+            "currentQueue" => $currentQueue,
         ]);
     }
 
@@ -210,137 +260,159 @@ class QueueController extends Controller
     {
         $role = $request->user()->role;
 
-        if ($role == 'DOCTOR') {
-            $location = 'CONSULTATION';
-        } else if ($role == 'PHARMACIST') {
-            $location = 'PHARMACY';
+        if ($role == "DOCTOR") {
+            $location = "CONSULTATION";
+        } elseif ($role == "PHARMACIST") {
+            $location = "PHARMACY";
         }
 
-        $currentPatient = Queue::where('status', 'SERVING')
-            ->where('location', $location)
-            ->where('doctor_id', $request->user()->id)
+        $currentPatient = Queue::where("status", "SERVING")
+            ->where("location", $location)
+            ->where("doctor_id", $request->user()->id)
             ->first();
 
         return response()->json([
-            'currentPatient' => $currentPatient
+            "currentPatient" => $currentPatient,
         ]);
     }
 
     public function cancelQueue(Request $request)
     {
-        $message = ['feedback.required' => 'The reason field is required.'];
+        $validator = Validator::make(
+            $request->all(),
+            [
+                "queueId" => "required",
+                "feedback" => "required",
+            ],
+            ["feedback.required" => "The reason field is required."]
+        );
 
-        $validator = Validator::make($request->all(),[
-            'queueId' => 'required',
-            'feedback' => 'required'
-        ], $message);
-
-        if($validator->fails()){
+        if ($validator->fails()) {
             return response()->json([
-                'success' => false,
-                'message' => $validator->messages()
+                "success" => false,
+                "message" => $validator->messages(),
             ]);
         }
 
         $queueId = $request->queueId;
 
         $queue = Queue::find($queueId);
-        $queue->status = 'CANCELLED';
+        $queue->status = "CANCELLED";
         $queue->save();
 
-        $feedback = new Feedback;
+        $feedback = new Feedback();
         $feedback->feedback = $request->feedback;
+        $feedback->created_by = $request->user()->id;
         $queue->feedback()->save($feedback);
 
-        if($request->user()->role == 'PATIENT'){
+        if ($request->user()->role == "PATIENT") {
             $token = $queue->doctor->fcm_token;
-            $body = $request->user()->full_name. ' has cancelled his queue.';
+            $body = $request->user()->full_name . " has cancelled his queue.";
             $data = [
-                'route' => 'Staff',
-                'type' => 'refreshQueue'
+                "route" => "Staff",
+                "type" => "refreshQueue",
             ];
-        }else{
+        } else {
             $token = $queue->patient->fcm_token;
-            $body = 'DR. ' . $request->user()->full_name. ' has cancelled your queue.';
+            $body =
+                "DR. " .
+                $request->user()->full_name .
+                " has cancelled your queue.";
             $data = [
-                'route' => 'Patient',
-                'type' => 'refreshQueue'
+                "route" => "Patient",
+                "type" => "refreshQueue",
             ];
         }
 
-        $title = 'Queue Cancelled';
+        $title = "Queue Cancelled";
 
         $this->FCMCloudMessaging->sendFCM($token, $title, $body, $data);
 
         return response()->json([
-            'success' => true,
-            'message' => 'Queue is cancelled successfully',
-            'queue' => $queue,
-            'feedback' => $feedback
+            "success" => true,
+            "message" => "Queue is cancelled successfully",
+            "queue" => $queue,
+            "feedback" => $feedback,
         ]);
     }
 
-    public function getQueueHistory(Request $request){
-        $queueHistory = $request->user()->queues->diff(Queue::where('status', 'WAITING')->get())->load(['feedback', 'served_by']);
+    public function getQueueHistory(Request $request)
+    {
+        $queueHistory = $request
+            ->user()
+            ->queues->diff(Queue::where("status", "WAITING")->get())
+            ->load(["feedback", "served_by"]);
         return response()->json([
-            'queueHistory' => $queueHistory
+            "queueHistory" => $queueHistory,
         ]);
     }
 
-    public function getQueueDetails(Request $request){
-        return Queue::find($request->queueId)->load(['patient', 'doctor', 'feedback']);
+    public function getQueueDetails(Request $request)
+    {
+        return Queue::find($request->queueId)->load([
+            "patient",
+            "doctor",
+            "feedback.createdBy",
+        ]);
     }
 
-    public function createQueue(Request $request){
-        $user = User::where('IC_no', $request->ic)->first();
-        if($user == null){
+    public function createQueue(Request $request)
+    {
+        $user = User::where("IC_no", $request->ic)->first();
+        if ($user == null) {
             $user = User::create([
-                'first_name' => $request->firstName,
-                'last_name' => $request->lastName,
-                'gender' => $request->gender,
-                'telephone' => $request->telephone,
-                'home_address' => $request->homeAddress,
-                'IC_no' => $request->ic,
-                'status' => 'VERIFIED',
-                'role' => 'PATIENT'
+                "first_name" => $request->firstName,
+                "last_name" => $request->lastName,
+                "gender" => $request->gender,
+                "telephone" => $request->telephone,
+                "home_address" => $request->homeAddress,
+                "IC_no" => $request->ic,
+                "status" => "VERIFIED",
+                "role" => "PATIENT",
             ]);
         }
-        $doctorId = Specialty::where('specialty', $request->specialty)
-                        ->get()
-                        ->sortBy(function ($queue){
-                            return count($queue->user->staffQueues);
-                        })
-                        ->pluck('user.id')
-                        ->values()
-                        ->all();
-        
+        $doctorId = Specialty::where("specialty", $request->specialty)
+            ->get()
+            ->sortBy(function ($queue) {
+                return count($queue->user->staffQueues);
+            })
+            ->pluck("user.id")
+            ->values()
+            ->all();
+
         $doctor = User::find($doctorId[0]);
         $location = $doctor->specialty->location;
 
-        $queue = new Queue;
-        $queue_no = (int)Queue::where('specialty', $request->specialty)
-                        ->whereDate('created_at', Carbon::today())
-                        ->max('queue_no') + 1;
+        $queue = new Queue();
+        $queue_no =
+            (int) Queue::where("specialty", $request->specialty)
+                ->whereDate("created_at", Carbon::today())
+                ->max("queue_no") + 1;
         $queue->queue_no = sprintf("%04d", $queue_no);
         $queue->status = "WAITING";
         $queue->location = $location;
         $queue->served_by = $doctor->id;
         $queue->specialty = $request->specialty;
         $queue->concern = $request->concern;
-        
+
         $user->queues()->save($queue);
-        
-        $title = 'New Patient';
-        $body =  $request->user()->full_name.' has joined the queue';
+
+        $title = "New Patient";
+        $body = $request->user()->full_name . " has joined the queue";
         $data = [
-            'route' => 'Staff',
-            'type' => 'refreshQueue'
+            "route" => "Staff",
+            "type" => "refreshQueue",
         ];
 
-        $this->FCMCloudMessaging->sendFCM($doctor->fcm_token, $title, $body, $data);
+        $this->FCMCloudMessaging->sendFCM(
+            $doctor->fcm_token,
+            $title,
+            $body,
+            $data
+        );
 
         return response()->json([
-            'queue' => $queue
+            "queue" => $queue,
         ]);
     }
 }

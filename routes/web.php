@@ -45,6 +45,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/createAppointment', [AppointmentController::class, 'createAppointmentWeb']);
     Route::post('/getDoctors', [UserController::class, 'getDoctorsWeb']);
     Route::get('/getDoctorSpecialty', [UserController::class, 'getDoctorSpecialtyWeb']);
+    Route::get('/password', function (){
+        return view('password');
+    })
+    ->name('password');
+    Route::get('/changePassword', [UserController::class, 'changePasswordWeb']);
+    Route::get('/verifyEmail/{token}',[UserController::class, 'verifyEmail']);
 });
 
 require __DIR__.'/auth.php';

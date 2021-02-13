@@ -9,26 +9,27 @@ use App\Models\Queue;
 
 class FeedbackController extends Controller
 {
-    public function storeFeedback(Request $request){
+    public function storeFeedback(Request $request)
+    {
         $message = null;
-        $validator = Validator::make($request->all(),[           
-            'queueId' =>'required',
-            'feedback' => 'required'
+        $validator = Validator::make($request->all(), [
+            "queueId" => "required",
+            "feedback" => "required",
         ]);
 
-        if($validator->fails()){
+        if ($validator->fails()) {
             $message = [
-                'success' => false,
-                'message' => $validator->messages()
+                "success" => false,
+                "message" => $validator->messages(),
             ];
-        }else{
+        } else {
             $queue = Queue::find($request->queueId);
 
-            $feedback = new Feedback;
+            $feedback = new Feedback();
             $feedback->feedback = $request->feedback;
             $queue->feedback()->save($feedback);
             $message = [
-                'success' =>true
+                "success" => true,
             ];
         }
         return response()->json($message);

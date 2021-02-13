@@ -9,26 +9,27 @@ use App\Models\Appointment;
 
 class AppointmentFeedbackController extends Controller
 {
-    public function storeAppointmentFeedback(Request $request){
+    public function storeAppointmentFeedback(Request $request)
+    {
         $message = null;
-        $validator = Validator::make($request->all(),[           
-            'appointmentId' =>'required',
-            'feedback' => 'required'
+        $validator = Validator::make($request->all(), [
+            "appointmentId" => "required",
+            "feedback" => "required",
         ]);
 
-        if($validator->fails()){
+        if ($validator->fails()) {
             $message = [
-                'success' => false,
-                'message' => $validator->messages()
+                "success" => false,
+                "message" => $validator->messages(),
             ];
-        }else{
+        } else {
             $appointment = Appointment::find($request->appointmentId);
 
-            $feedback = new AppointmentFeedback;
+            $feedback = new AppointmentFeedback();
             $feedback->feedback = $request->feedback;
             $appointment->feedback()->save($feedback);
             $message = [
-                'success' =>true
+                "success" => true,
             ];
         }
         return response()->json($message);

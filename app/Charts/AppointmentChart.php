@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace App\Charts;
 
@@ -18,21 +18,35 @@ class AppointmentChart extends BaseChart
      */
     public function handler(Request $request): Chartisan
     {
-        $dates = Appointment::pluck('created_at')->map(function ($item){
-            return $item->format('d-m-Y');
-        })->unique()->values()->all();
+        $dates = Appointment::pluck("created_at")
+            ->map(function ($item) {
+                return $item->format("d-m-Y");
+            })
+            ->unique()
+            ->values()
+            ->all();
 
-        $completed = Appointment::where('status', 'COMPLETED')->pluck('date')->map(function ($item){
-            return $item->format('d-m-Y');
-        })->countBy()->values()->toArray();
+        $completed = Appointment::where("status", "COMPLETED")
+            ->pluck("date")
+            ->map(function ($item) {
+                return $item->format("d-m-Y");
+            })
+            ->countBy()
+            ->values()
+            ->toArray();
 
-        $cancelled = Appointment::where('status', 'CANCELLED')->pluck('date')->map(function ($item){
-            return $item->format('d-m-Y');
-        })->countBy()->values()->toArray();
+        $cancelled = Appointment::where("status", "CANCELLED")
+            ->pluck("date")
+            ->map(function ($item) {
+                return $item->format("d-m-Y");
+            })
+            ->countBy()
+            ->values()
+            ->toArray();
 
         return Chartisan::build()
             ->labels($dates)
-            ->dataset('Completed', $completed)
-            ->dataset('Cancelled', $cancelled);
+            ->dataset("Completed", $completed)
+            ->dataset("Cancelled", $cancelled);
     }
 }

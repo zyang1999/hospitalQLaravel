@@ -19,18 +19,18 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'first_name',
-        'last_name',
-        'email',
-        'password',
-        'role',
-        'email_verified_at',
-        'home_address',
-        'telephone',
-        'gender',
-        'IC_no',
-        'status',
-        'selfie'
+        "first_name",
+        "last_name",
+        "email",
+        "password",
+        "role",
+        "email_verified_at",
+        "home_address",
+        "telephone",
+        "gender",
+        "IC_no",
+        "status",
+        "selfie",
     ];
 
     /**
@@ -38,10 +38,7 @@ class User extends Authenticatable
      *
      * @var array
      */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    protected $hidden = ["password", "remember_token"];
 
     /**
      * The attributes that should be cast to native types.
@@ -49,21 +46,21 @@ class User extends Authenticatable
      * @var array
      */
 
-    protected $appends = ['selfie_string', 'full_name'];
+    protected $appends = ["selfie_string", "full_name"];
 
     public function getSelfieStringAttribute()
     {
         $base64 = null;
-        if($this->selfie != null){
+        if ($this->selfie != null) {
             $data = file_get_contents($this->selfie);
-            $base64 = 'data:image/png;base64,' . base64_encode($data);
-        }      
+            $base64 = "data:image/png;base64," . base64_encode($data);
+        }
         return $base64;
     }
 
     public function queues()
     {
-        return $this->hasMany(Queue::class, 'user_id');
+        return $this->hasMany(Queue::class, "user_id");
     }
 
     public function office()
@@ -71,64 +68,85 @@ class User extends Authenticatable
         return $this->hasOne(Office::class);
     }
 
-    public function specialty(){
-        return $this->hasOne(Specialty::class, 'doctor_id');
+    public function specialty()
+    {
+        return $this->hasOne(Specialty::class, "doctor_id");
     }
 
-    public function appointments(){
-        return $this->hasMany(Appointment::class, 'patient_id');
+    public function appointments()
+    {
+        return $this->hasMany(Appointment::class, "patient_id");
     }
 
-    public function doctorAppointments(){
-        return $this->hasMany(Appointment::class, 'doctor_id');
+    public function doctorAppointments()
+    {
+        return $this->hasMany(Appointment::class, "doctor_id");
     }
 
-    public function staffQueues(){
-        return $this->hasMany(Queue::class, 'served_by');
+    public function staffQueues()
+    {
+        return $this->hasMany(Queue::class, "served_by");
     }
 
-    public function getFullNameAttribute(){
+    public function getFullNameAttribute()
+    {
         return $this->first_name . " " . $this->last_name;
     }
 
-    public function getDoctorPendingQueues(){
+    public function getDoctorPendingQueues()
+    {
         return $this->staffQueues()
-                ->whereDate('created_at', Carbon::today())
-                ->whereIn('status', ['SERVING', 'WAITING'])
-                ->get();
+            ->whereDate("created_at", Carbon::today())
+            ->whereIn("status", ["SERVING", "WAITING"])
+            ->get();
     }
 
-    public function getNursePendingQueues(){
-
-        $queues = Queue::whereIn('status', ['WAITING', 'SERVING'])
-                    ->where('specialty', 'Phamarcy')
-                    ->whereDate('created_at', Carbon::today())
-                    ->get();
+    public function getNursePendingQueues()
+    {
+        $queues = Queue::whereIn("status", ["WAITING", "SERVING"])
+            ->where("specialty", "Phamarcy")
+            ->whereDate("created_at", Carbon::today())
+            ->get();
 
         return $queues;
     }
 
-    public function getCurrentServing(){
+    public function getCurrentServing()
+    {
         return $this->staffQueues
-        ->where('status', 'SERVING')
-        ->load(['patient'])
-        ->first();
+            ->where("status", "SERVING")
+            ->load(["patient"])
+            ->first();
     }
 
-    public function getQueueHistory(){
-        if($this->role == 'PATIENT'){
-            $queues = $this->queues->whereIn('status', ['COMPLETED', 'CANCELLED'])->load(['feedback'])->makeHidden(['doctor', 'patient']);
-        }else{
-            $queues = $this->staffQueues->whereIn('status', ['COMPLETED', 'CANCELLED'])->load(['feedback'])->makeHidden(['doctor', 'patient']);;
+    public function getQueueHistory()
+    {
+        if ($this->role == "PATIENT") {
+            $queues = $this->queues
+                ->whereIn("status", ["COMPLETED", "CANCELLED"])
+                ->load(["feedback"])
+                ->makeHidden(["doctor", "patient"]);
+        } else {
+            $queues = $this->staffQueues
+                ->whereIn("status", ["COMPLETED", "CANCELLED"])
+                ->load(["feedback"])
+                ->makeHidden(["doctor", "patient"]);
         }
         return $queues;
     }
 
-    public function getAppointmentHistory(){
-        if($this->role == 'PATIENT'){
-            $appointments = $this->appointments->whereIn('status', ['COMPLETED', 'CANCELLED'])->load(['feedback'])->makeHidden(['doctor', 'patient']);;
-        }else{
-            $appointments = $this->doctorAppointments->whereIn('status', ['COMPLETED', 'CANCELLED'])->load(['feedback'])->makeHidden(['doctor', 'patient']);;
+    public function getAppointmentHistory()
+    {
+        if ($this->role == "PATIENT") {
+            $appointments = $this->appointments
+                ->whereIn("status", ["COMPLETED", "CANCELLED"])
+                ->load(["feedback"])
+                ->makeHidden(["doctor", "patient"]);
+        } else {
+            $appointments = $this->doctorAppointments
+                ->whereIn("status", ["COMPLETED", "CANCELLED"])
+                ->load(["feedback"])
+                ->makeHidden(["doctor", "patient"]);
         }
         return $appointments;
     }
