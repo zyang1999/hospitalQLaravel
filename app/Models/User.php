@@ -104,7 +104,8 @@ class User extends Authenticatable
     public function getNursePendingQueues()
     {
         $queues = Queue::whereIn("status", ["WAITING", "SERVING"])
-            ->where("specialty", "Phamarcy")
+            ->where("specialty", "Pharmacist")
+            ->where("location", $this->specialty->location)
             ->whereDate("created_at", Carbon::today())
             ->get();
 

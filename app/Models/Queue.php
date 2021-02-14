@@ -49,6 +49,9 @@ class Queue extends Model
 
     public function getDoctorFullNameAttribute()
     {
+        if($this->doctor == null){
+            return null;
+        }
         return $this->doctor->first_name . " " . $this->doctor->last_name;
     }
 

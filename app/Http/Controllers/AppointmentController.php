@@ -37,7 +37,7 @@ class AppointmentController extends Controller
 
         if ($duplicate->count() != 0) {
             return response()->json([
-                "sucesss" => false,
+                "success" => false,
                 "message" => ["error" => "Duplicated Appointment Found!"],
             ]);
         }
@@ -90,46 +90,55 @@ class AppointmentController extends Controller
     public function deleteAppointment(Request $request)
     {
         $appointment = Appointment::find($request->id);
-        if ($appointment->patient_id !== null) {
-            $message = ["feedback.required" => "The reason field is required."];
-
-            $validator = Validator::make(
-                $request->all(),
-                [
-                    "feedback" => "required",
-                ],
-                $message
-            );
-
-            if ($validator->fails()) {
-                return response()->json([
-                    "success" => false,
-                    "message" => $validator->messages(),
-                ]);
-            }
-
-            $appointment->status = "CANCELLED";
+        if ($request->user()->role == "PATIENT") {
+            $appointment->status = "AVAILABLE";
+            $appointment->patient_id = null;
+            $appointment->concern = null;
             $appointment->save();
-
-            $feedback = new AppointmentFeedback();
-            $feedback->feedback = $request->feedback;
-            $appointment->feedback()->save($feedback);
-
-            $token = $appointment->patient->fcm_token;
-            $title = "Appointment";
-            $body =
-                "DR. " .
-                $request->user()->full_name .
-                " has cancalled your appointment.";
-            $data = [
-                "tab" => "HistoryStack",
-                "screen" => "AppointmentDetails",
-                "appointmentId" => $appointment->id,
-            ];
-
-            $this->FCMCloudMessaging->sendFCM($token, $title, $body, $data);
         } else {
-            $appointment->delete();
+            if ($appointment->patient_id !== null) {
+                $message = [
+                    "feedback.required" => "The reason field is required.",
+                ];
+
+                $validator = Validator::make(
+                    $request->all(),
+                    [
+                        "feedback" => "required",
+                    ],
+                    $message
+                );
+
+                if ($validator->fails()) {
+                    return response()->json([
+                        "success" => false,
+                        "message" => $validator->messages(),
+                    ]);
+                }
+
+                $appointment->status = "CANCELLED";
+                $appointment->save();
+
+                $feedback = new AppointmentFeedback();
+                $feedback->feedback = $request->feedback;
+                $appointment->feedback()->save($feedback);
+
+                $token = $appointment->patient->fcm_token;
+                $title = "Appointment";
+                $body =
+                    "DR. " .
+                    $request->user()->full_name .
+                    " has cancelled your appointment.";
+                $data = [
+                    "tab" => "HistoryStack",
+                    "screen" => "AppointmentDetails",
+                    "appointmentId" => $appointment->id,
+                ];
+
+                $this->FCMCloudMessaging->sendFCM($token, $title, $body, $data);
+            } else {
+                $appointment->delete();
+            }
         }
 
         return response()->json([
@@ -144,7 +153,7 @@ class AppointmentController extends Controller
             ->user()
             ->doctorAppointments->makeHidden(["doctor", "patient"])
             ->sortBy("start_at")
-            ->groupBy('date');
+            ->groupBy("date");
 
         return response()->json([
             "allAppointments" => $allAppointments,
@@ -164,12 +173,12 @@ class AppointmentController extends Controller
 
     public function getSchedule(Request $request)
     {
-        $scheuldes = Appointment::where("doctor_id", $request->doctorId)
+        $schedules = Appointment::where("doctor_id", $request->doctorId)
             ->where("date", $request->date)
             ->get();
 
         return response()->json([
-            "schedules" => $scheuldes,
+            "schedules" => $schedules,
         ]);
     }
 
@@ -227,14 +236,14 @@ class AppointmentController extends Controller
     {
         return Appointment::find($request->appointmentId)->load([
             "patient",
-            "feedback",
+            "feedback.createdBy",
             "doctor",
         ]);
     }
 
     public function getAppointmentView(Request $request)
     {
-        $specialties = Specialty::where("specialty", "not like", "Phamarcist")
+        $specialties = Specialty::where("specialty", "not like", "Pharmacist")
             ->pluck("specialty")
             ->unique();
         $doctors = User::where("role", "DOCTOR")->get();

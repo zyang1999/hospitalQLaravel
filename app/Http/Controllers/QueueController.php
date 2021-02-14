@@ -83,14 +83,23 @@ class QueueController extends Controller
             $prevQueue->status = "COMPLETED";
             $prevQueue->save();
             if ($role == "DOCTOR") {
+                $counterNo = Queue::whereDate("created_at", Carbon::today())
+                    ->where("specialty", "Pharmacist")
+                    ->pluck("location")
+                    ->countBy()
+                    ->sort()
+                    ->keys()
+                    ->first();
+
                 $queue = new Queue();
                 $queue_no =
-                    (int) Queue::where("specialty", "Phamarcy")
+                    (int) Queue::where("specialty", "Pharmacist")
                         ->whereDate("created_at", Carbon::today())
                         ->max("queue_no") + 1;
                 $queue->queue_no = sprintf("%04d", $queue_no);
                 $queue->status = "WAITING";
-                $queue->specialty = "Phamarcy";
+                $queue->specialty = "Pharmacist";
+                $queue->location = $counterNo;
                 $queue->user_id = $prevQueue->user_id;
                 $queue->save();
             }
@@ -182,12 +191,12 @@ class QueueController extends Controller
         if ($request->user()->role == "DOCTOR") {
             $queue = new Queue();
             $queue_no =
-                (int) Queue::where("specialty", "Phamarcy")
+                (int) Queue::where("specialty", "Pharmacist")
                     ->whereDate("created_at", Carbon::today())
                     ->max("queue_no") + 1;
             $queue->queue_no = sprintf("%04d", $queue_no);
             $queue->status = "WAITING";
-            $queue->specialty = "Phamarcy";
+            $queue->specialty = "Pharmacist";
             $queue->user_id = $currentQueue->user_id;
             $queue->save();
         }
@@ -230,7 +239,7 @@ class QueueController extends Controller
                     ->queues()
                     ->latest()
                     ->first();
-                if ($queue->specialty == "Phamarcy") {
+                if ($queue->specialty == "Pharmacist") {
                     $allQueue = $user->getNursePendingQueues();
                 } else {
                     $allQueue = User::find(
@@ -250,9 +259,16 @@ class QueueController extends Controller
                 break;
         }
 
+        $nextPatient = $allQueue->firstWhere("status", "WAITING");
+
+        if($nextPatient != null){
+            $nextPatient = $nextPatient->patient;
+        }
+
         return response()->json([
             "allQueue" => $allQueue,
             "currentQueue" => $currentQueue,
+            "nextPatient" => $nextPatient,
         ]);
     }
 

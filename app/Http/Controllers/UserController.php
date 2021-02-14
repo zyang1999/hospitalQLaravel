@@ -448,14 +448,14 @@ class UserController extends Controller
 
         $this->FCMCloudMessaging->sendFCM(
             $user->fcm_token,
-            "Veriication Success",
+            "Verification Success",
             "Your account is verified. You may start using the apps!",
             ["route" => "Patient", "type" => "Verification"]
         );
 
         return response()->json([
             "success" => true,
-            "message" => "The user verfication is approved.",
+            "message" => "The user verification is approved.",
         ]);
     }
 
@@ -488,14 +488,14 @@ class UserController extends Controller
 
         $this->FCMCloudMessaging->sendFCM(
             $user->fcm_token,
-            "Veriication Failed",
+            "Verification Failed",
             "Your account has failed to be verified based on the provided information.",
             ["route" => "ICVerification", "type" => "VerificationFail"]
         );
 
         return response()->json([
             "success" => true,
-            "message" => "The user verfication is rejected.",
+            "message" => "The user verification is rejected.",
         ]);
     }
 
@@ -544,11 +544,16 @@ class UserController extends Controller
             $specialty->specialty = $request->specialty;
             $specialty->location = $request->location;
             $user->specialty()->save($specialty);
+        }else if($request->role == "NURSE"){
+            $specialty = new Specialty();
+            $specialty->specialty = "Pharmacist";
+            $specialty->location = $request->counterNo;
+            $user->specialty()->save($specialty);
         }
 
         return response()->json([
             "success" => true,
-            "message" => "New Staff is added successfully!",
+            "message" => "New User is added successfully!",
         ]);
     }
 

@@ -18,28 +18,19 @@ class AppointmentChart extends BaseChart
      */
     public function handler(Request $request): Chartisan
     {
-        $dates = Appointment::pluck("created_at")
-            ->map(function ($item) {
-                return $item->format("d-m-Y");
-            })
+        $dates = Appointment::pluck("date")
             ->unique()
             ->values()
             ->all();
 
         $completed = Appointment::where("status", "COMPLETED")
             ->pluck("date")
-            ->map(function ($item) {
-                return $item->format("d-m-Y");
-            })
             ->countBy()
             ->values()
             ->toArray();
 
         $cancelled = Appointment::where("status", "CANCELLED")
             ->pluck("date")
-            ->map(function ($item) {
-                return $item->format("d-m-Y");
-            })
             ->countBy()
             ->values()
             ->toArray();

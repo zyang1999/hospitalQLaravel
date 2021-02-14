@@ -17,6 +17,7 @@ class CreateAppointmentFeedbackTable extends Migration
             $table->id();
             $table->string('appointment_id');
             $table->string('feedback');
+            $table->string('created_by');
             $table->timestamps();
         });
     }
