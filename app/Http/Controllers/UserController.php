@@ -605,9 +605,7 @@ class UserController extends Controller
 
     public function getDoctorsWeb(Request $request)
     {
-        $doctors = User::whereHas("specialty", function (Builder $query) use (
-            $request
-        ) {
+        $doctors = User::whereHas("specialty", function (Builder $query) use ($request) {
             $query->where("specialty", $request->specialty);
         })->get();
 

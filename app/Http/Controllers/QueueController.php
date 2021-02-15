@@ -261,7 +261,7 @@ class QueueController extends Controller
 
         $nextPatient = $allQueue->firstWhere("status", "WAITING");
 
-        if($nextPatient != null){
+        if ($nextPatient != null) {
             $nextPatient = $nextPatient->patient;
         }
 
@@ -387,16 +387,21 @@ class QueueController extends Controller
                 "role" => "PATIENT",
             ]);
         }
-        $doctorId = Specialty::where("specialty", $request->specialty)
-            ->get()
-            ->sortBy(function ($queue) {
-                return count($queue->user->staffQueues);
-            })
-            ->pluck("user.id")
-            ->values()
-            ->all();
 
-        $doctor = User::find($doctorId[0]);
+        $doctor = User::whereHas("specialty", function ($query) use ($request) {
+            $query->where("specialty", $request->specialty);
+        })
+            ->get()
+            ->sortBy(function ($doctor) {
+                return count(
+                    $doctor
+                        ->staffQueues()
+                        ->whereDate("created_at", Carbon::today())
+                        ->get()
+                );
+            })
+            ->first();
+
         $location = $doctor->specialty->location;
 
         $queue = new Queue();

@@ -31,7 +31,7 @@ class SpecialtyController extends Controller
 
     public function getSpecialtiesView()
     {
-        $specialties = Specialty::where("specialty", "not like", "Phamarcist")
+        $specialties = Specialty::where("specialty", "not like", "Pharmacist")
             ->pluck("specialty")
             ->unique();
 

@@ -8,7 +8,8 @@ use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\SpecialtyController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AppointmentFeedbackController;
-use App\Models\Queue;
+use Illuminate\Database\Eloquent\Builder;
+use App\Models\User;
 use Carbon\Carbon;
 /*
 |--------------------------------------------------------------------------
@@ -74,4 +75,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('storeAppointmentFeedback', [AppointmentFeedbackController::class, 'storeAppointmentFeedback']);
 
     Route::post('saveFcmToken', [UserController::class, 'saveFcmToken']);
+});
+
+Route::get('/getQueueCount', function () {
+    $request = "Family Physician";
+    return User::whereHas("specialty", function (Builder $query) use ($request) {
+        $query->where("specialty", $request);
+    })->get()->sortBy(function ($doctor){
+        return count($doctor->staffQueues()->whereDate("created_at", Carbon::today())->get());
+    });
 });

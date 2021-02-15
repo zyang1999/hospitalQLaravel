@@ -282,6 +282,15 @@ class AppointmentController extends Controller
         }
 
         if ($request->patientId == null) {
+            if (User::where("IC_no", $request->IC_no)->first() != null) {
+                return response()->json([
+                    "success" => false,
+                    "message" => [
+                        "error" =>
+                            "This patient is found in our database. Please search this patient record with the 'Search' button to ensure correct information is filled in.",
+                    ],
+                ]);
+            }
             $user = User::create($request->all());
         } else {
             $user = User::find($request->patientId);
@@ -291,6 +300,13 @@ class AppointmentController extends Controller
         $appointment->status = "BOOKED";
         $appointment->concern = $request->concern;
         $user->appointments()->save($appointment);
+
+        $this->FCMCloudMessaging->sendFCM(
+            $appointment->doctor->fcm_token,
+            "Appointment Booked",
+            $user->full_name . " has booked an appointment from you.",
+            []
+        );
 
         return response()->json([
             "success" => true,

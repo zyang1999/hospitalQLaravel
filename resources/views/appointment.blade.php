@@ -204,10 +204,10 @@
         }).done(function(response) {
             if (response.success) {
                 alert(response.message);
+                location.reload();
             } else {
                 alert(Object.values(response.message).join("\n"));
             }
-            location.reload();
         });
     })
 
