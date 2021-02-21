@@ -50,7 +50,8 @@ Route::middleware(['auth'])->group(function () {
     })
     ->name('password');
     Route::get('/changePassword', [UserController::class, 'changePasswordWeb']);
-    Route::get('/verifyEmail/{token}',[UserController::class, 'verifyEmail']);
 });
+
+Route::get('/verifyEmail/{token}',[UserController::class, 'verifyEmail']);
 
 require __DIR__.'/auth.php';

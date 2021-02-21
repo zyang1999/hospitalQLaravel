@@ -37,6 +37,7 @@
                                             data-bs-target="#editUserModal" data-bs-id={{ $user->id }}>
                                             Edit
                                         </button>
+                                        <button type="button" class="btn btn-danger" id="removeButton" value={{ $user->id }}>Remove</button>
                                     </td>
                                 </tr>
                             @endforeach
@@ -152,7 +153,6 @@
                         </div>
                         <input type="hidden" id="userId" name="id">
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-danger" id="removeButton">Remove</button>
                             <button type="submit" class="btn btn-primary" id="saveButton" name="id">Save</button>
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         </div>
@@ -166,7 +166,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>New Staff</h3>
+                    <h3>New User</h3>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form id="createUserForm">
@@ -424,9 +424,7 @@
                     $("#createUserForm").modal('hide');
                     location.reload();
                 } else {
-                    data.message.IC_no && alert(data.message.IC_no);
-                    data.message.email && alert(data.message.email);
-                    data.message.telephone && alert(data.message.telephone);
+                    alert(Object.values(response.message).join("\n"));
                 }
             },
         });
@@ -460,7 +458,7 @@
             type: 'POST',
             url: "./removeUser",
             data: {
-                id: $('#userId').val(),
+                id: $('#removeButton').val(),
                 _token: '{{ csrf_token() }}'
             }
         }).done(function(data) {

@@ -45,6 +45,14 @@ class UserController extends Controller
             ]);
         } else {
             $user = User::where("email", $request->email)->first();
+            if ($user == null) {
+                return response()->json([
+                    "success" => false,
+                    "type" => "invalid",
+                    "message" =>
+                        "Incorrect email address or password, please try again.",
+                ]);
+            }
             if ($user->role != "ADMIN") {
                 if ($user->email_verified_at == "VERIFIED") {
                     if (!Hash::check($request->password, $user->password)) {
@@ -102,10 +110,6 @@ class UserController extends Controller
                     "required|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/|confirmed|",
                 "password_confirmation" => "required",
             ],
-            [
-                "password.regex" =>
-                    "Minimum eight characters, at least one uppercase letter, one lowercase letter, one number and one special character",
-            ]
         );
         if ($validator->fails()) {
             return response()->json([
@@ -149,7 +153,7 @@ class UserController extends Controller
     public function getUser(Request $request)
     {
         return response()->json([
-            "user" => $request->user(),
+            "user" => $request->user()->load(["specialty"]),
         ]);
     }
 
@@ -544,7 +548,7 @@ class UserController extends Controller
             $specialty->specialty = $request->specialty;
             $specialty->location = $request->location;
             $user->specialty()->save($specialty);
-        }else if($request->role == "NURSE"){
+        } elseif ($request->role == "NURSE") {
             $specialty = new Specialty();
             $specialty->specialty = "Pharmacist";
             $specialty->location = $request->counterNo;
@@ -605,7 +609,9 @@ class UserController extends Controller
 
     public function getDoctorsWeb(Request $request)
     {
-        $doctors = User::whereHas("specialty", function (Builder $query) use ($request) {
+        $doctors = User::whereHas("specialty", function (Builder $query) use (
+            $request
+        ) {
             $query->where("specialty", $request->specialty);
         })->get();
 

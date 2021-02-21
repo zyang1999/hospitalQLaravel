@@ -1,9 +1,10 @@
 <x-guest-layout>
     <x-auth-card>
         <x-slot name="logo">
-            <a href="/">
+            {{-- <a href="/">
                 <x-application-logo class="w-20 h-20 fill-current text-gray-500" />
-            </a>
+            </a> --}}
+            <h1>HospitalQ Admin Panel</h1>
         </x-slot>
 
         <div class="mb-4 text-sm text-gray-600">

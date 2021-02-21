@@ -17,21 +17,21 @@
                     <form action="./changePassword" method="GET">
                         <div class="mb-3">
                             <label for="oldPassword" class="form-label">Old Password</label>
-                            <input type="password" class="form-control" name="oldPassword">
+                            <input type="password" class="form-control" name="oldPassword" required>
                             @error('oldPassword')
                                 <div class="alert alert-danger mt-1">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="mb-3">
                             <label for="newPassword" class="form-label">New Password</label>
-                            <input type="password" class="form-control" name="newPassword">
+                            <input type="password" class="form-control" name="newPassword" required>
                             @error('newPassword')
                                 <div class="alert alert-danger mt-1">{{ $message }}</div>
                             @enderror
                         </div>
                         <div class="mb-3">
                             <label for="confirmNewPassword" class="form-label">Confirm New Password</label>
-                            <input type="password" class="form-control" name="newPassword_confirmation">
+                            <input type="password" class="form-control" name="newPassword_confirmation" required>
                             @error('newPassword_confirmation')
                                 <div class="alert alert-danger mt-1">{{ $message }}</div>
                             @enderror

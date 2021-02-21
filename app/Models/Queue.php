@@ -49,7 +49,7 @@ class Queue extends Model
 
     public function getDoctorFullNameAttribute()
     {
-        if($this->doctor == null){
+        if ($this->doctor == null) {
             return null;
         }
         return $this->doctor->first_name . " " . $this->doctor->last_name;
@@ -66,6 +66,14 @@ class Queue extends Model
     }
     public function getNumberofPatientsAttribute()
     {
+        if ($this->specialty == "Pharmacist") {
+            return Queue::where("specialty", $this->specialty)
+                ->where("location", $this->location)
+                ->where("status", "WAITING")
+                ->whereDate("created_at", Carbon::today())
+                ->count();
+        }
+
         return $this->doctor
             ->staffQueues()
             ->where("status", "WAITING")
@@ -75,9 +83,7 @@ class Queue extends Model
 
     public function getTimeRangeAttribute()
     {
-        $queue = Queue::where("location", $this->specialty)
-            ->where("status", "WAITING")
-            ->get();
+        $queue = $this->doctor->staffQueues->where('status', 'COMPLETED');
         $numberOfPatients = $queue->count();
         $averageWaitingTime = $queue->avg("waiting_time");
         $totalWaitingSeconds = $numberOfPatients * $averageWaitingTime;

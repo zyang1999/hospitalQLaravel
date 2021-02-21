@@ -121,6 +121,7 @@ class AppointmentController extends Controller
 
                 $feedback = new AppointmentFeedback();
                 $feedback->feedback = $request->feedback;
+                $feedback->created_by = $request->user()->id;
                 $appointment->feedback()->save($feedback);
 
                 $token = $appointment->patient->fcm_token;
@@ -143,7 +144,7 @@ class AppointmentController extends Controller
 
         return response()->json([
             "success" => true,
-            "message" => "Appointment is deleted successfully",
+            "message" => "Appointment is cancelled successfully",
         ]);
     }
 

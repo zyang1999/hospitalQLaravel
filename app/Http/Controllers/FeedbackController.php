@@ -27,6 +27,7 @@ class FeedbackController extends Controller
 
             $feedback = new Feedback();
             $feedback->feedback = $request->feedback;
+            $feedback->created_by = $request->user()->id;
             $queue->feedback()->save($feedback);
             $message = [
                 "success" => true,

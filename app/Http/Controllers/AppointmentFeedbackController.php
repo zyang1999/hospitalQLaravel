@@ -27,6 +27,7 @@ class AppointmentFeedbackController extends Controller
 
             $feedback = new AppointmentFeedback();
             $feedback->feedback = $request->feedback;
+            $feedback->created_by = $request->user()->id;
             $appointment->feedback()->save($feedback);
             $message = [
                 "success" => true,

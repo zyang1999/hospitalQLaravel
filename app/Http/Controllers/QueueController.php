@@ -209,15 +209,13 @@ class QueueController extends Controller
 
     public function getUserQueue(Request $request)
     {
-        $allQueue = null;
-
         $userQueue = $request
             ->user()
             ->queues()
-            ->where("status", "WAITING")
-            ->orwhere("status", "SERVING")
+            ->whereIn("status", ["WAITING", "SERVING"])
             ->latest()
             ->first();
+            
         if ($userQueue != null) {
             $userQueue->append("time_range", "number_of_patients");
         }
@@ -240,7 +238,11 @@ class QueueController extends Controller
                     ->latest()
                     ->first();
                 if ($queue->specialty == "Pharmacist") {
-                    $allQueue = $user->getNursePendingQueues();
+                    $allQueue = Queue::where("specialty", $queue->specialty)
+                        ->where("location", $queue->location)
+                        ->whereIn("status", ["WAITING", "SERVING"])
+                        ->whereDate("created_at", Carbon::today())
+                        ->get();
                 } else {
                     $allQueue = User::find(
                         $queue->served_by
