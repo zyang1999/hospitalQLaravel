@@ -269,11 +269,19 @@ class AppointmentController extends Controller
 
     public function createAppointmentWeb(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            "first_name" => "regex:/^[a-z ,.'-]+$/i",
-            "last_name" => "regex:/^[a-z ,.'-]+$/i",
-            "telephone" => "digits_between:10,11",
-        ]);
+        $validator = Validator::make(
+            $request->all(),
+            [
+                "first_name" => "regex:/^[a-z ,.'-]+$/i",
+                "last_name" => "regex:/^[a-z ,.'-]+$/i",
+                "telephone" => "digits_between:10,11",
+                "IC_no" => "digits_between:12,12",
+            ],
+            [
+                "IC_no.digits_between" =>
+                    "The IC number should be exactly 12 characters long.",
+            ]
+        );
 
         if ($validator->fails()) {
             return response()->json([
@@ -292,7 +300,16 @@ class AppointmentController extends Controller
                     ],
                 ]);
             }
-            $user = User::create($request->all());
+            $user = User::create([
+                "first_name" => $request->first_name,
+                "last_name" => $request->last_name,
+                "gender" => $request->gender,
+                "telephone" => $request->telephone,
+                "home_address" => $request->home_address,
+                "IC_no" => $request->IC_no,
+                "status" => "VERIFIED",
+                "role" => "PATIENT",
+            ]);
         } else {
             $user = User::find($request->patientId);
         }

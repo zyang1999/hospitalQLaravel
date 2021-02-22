@@ -27,7 +27,7 @@
                         <tbody>
                             @foreach ($users as $user)
                                 <tr>
-                                    <th scope="row">{{ $user->id }}</th>
+                                    <th scope="row" class="id">{{ $user->id }}</th>
                                     <td>{{ $user->first_name }}</td>
                                     <td>{{ $user->last_name }}</td>
                                     <td>{{ $user->IC_no }}</td>
@@ -37,7 +37,7 @@
                                             data-bs-target="#editUserModal" data-bs-id={{ $user->id }}>
                                             Edit
                                         </button>
-                                        <button type="button" class="btn btn-danger" id="removeButton" value={{ $user->id }}>Remove</button>
+                                        <button type="button" class="btn btn-danger removeButton" id="removeButton">Remove</button>
                                     </td>
                                 </tr>
                             @endforeach
@@ -174,7 +174,7 @@
                         <div class="row align-items-start">
                             <div class="mb-3">
                                 <label for="formFile" class="form-label">Upload Profile Picture</label>
-                                <input class="form-control" type="file" id="imageInput" accept="image/*">
+                                <input class="form-control" type="file" id="imageInput" accept="image/*" required>
                             </div>
                             <div class="col">
                                 <label for="recipient-name" class="col-form-label">First Name:</label>
@@ -192,26 +192,24 @@
                             </div>
                             <div class="col">
                                 <label for="recipient-name" class="col-form-label">Telephone:</label>
-                                <input type="text" class="form-control" id="telephone" name="telephone" required>
+                                <input type="text" class="form-control" name="telephone" required>
                             </div>
                         </div>
                         <div class="row align-items-start">
                             <div class="col">
                                 <label for="recipient-name" class="col-form-label">IC:</label>
-                                <input type="number" class="form-control" id="ic" name="IC_no" required>
+                                <input type="number" class="form-control" name="IC_no" required>
                             </div>
                             <div class="col">
                                 <label for="exampleFormControlInput1" class="form-label">Gender:</label>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" id="Male" value="Male" name="gender"
-                                        checked>
+                                    <input class="form-check-input" type="radio" value="Male" name="gender" checked>
                                     <label class="form-check-label" for="flexRadioDefault1">
                                         Male
                                     </label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="radio" id="Female" name="gender"
-                                        value="Female">
+                                    <input class="form-check-input" type="radio" name="gender" value="Female">
                                     <label class="form-check-label" for="flexRadioDefault2">
                                         Female
                                     </label>
@@ -420,11 +418,11 @@
             processData: false,
             success: function(data) {
                 if (data.success == true) {
-                    alert('New Staff is created successfully!');
+                    alert(data.message);
                     $("#createUserForm").modal('hide');
                     location.reload();
                 } else {
-                    alert(Object.values(response.message).join("\n"));
+                    alert(Object.values(data.message).join("\n"));
                 }
             },
         });
@@ -447,18 +445,20 @@
                     alert(data.message);
                     location.reload();
                 } else {
-                    data.message.telephone && alert(data.message.telephone);
+                    alert(Object.values(data.message).join("\n"));
                 }
             },
         });
     });
 
-    $('#removeButton').click(function() {
+    $('.removeButton').click(function() {
+        var currentRow = $(this).closest("tr");
+        var id = currentRow.find(".id").text();
         $.ajax({
             type: 'POST',
             url: "./removeUser",
             data: {
-                id: $('#removeButton').val(),
+                id: id,
                 _token: '{{ csrf_token() }}'
             }
         }).done(function(data) {

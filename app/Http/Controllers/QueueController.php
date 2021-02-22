@@ -215,7 +215,7 @@ class QueueController extends Controller
             ->whereIn("status", ["WAITING", "SERVING"])
             ->latest()
             ->first();
-            
+
         if ($userQueue != null) {
             $userQueue->append("time_range", "number_of_patients");
         }
@@ -376,8 +376,35 @@ class QueueController extends Controller
 
     public function createQueue(Request $request)
     {
-        $user = User::where("IC_no", $request->ic)->first();
-        if ($user == null) {
+        $validator = Validator::make(
+            $request->all(),
+            [
+                "ic" => "digits_between:12,12",
+                "telephone" => "digits_between:10,11",
+            ],
+            [
+                "ic.digits_between" =>
+                    "The IC number should be exactly 12 characters long.",
+            ]
+        );
+
+        if ($validator->fails()) {
+            return response()->json([
+                "success" => false,
+                "message" => $validator->messages(),
+            ]);
+        }
+
+        if ($request->patientId == null) {
+            if (User::where("IC_no", $request->ic)->first() != null) {
+                return response()->json([
+                    "success" => false,
+                    "message" => [
+                        "error" =>
+                            "This patient is found in our database. Please search this patient record with the 'Search' button to ensure correct information is filled in.",
+                    ],
+                ]);
+            }
             $user = User::create([
                 "first_name" => $request->firstName,
                 "last_name" => $request->lastName,
@@ -388,6 +415,8 @@ class QueueController extends Controller
                 "status" => "VERIFIED",
                 "role" => "PATIENT",
             ]);
+        }else{
+            $user = User::find($request->patientId);
         }
 
         $doctor = User::whereHas("specialty", function ($query) use ($request) {
@@ -435,6 +464,7 @@ class QueueController extends Controller
         );
 
         return response()->json([
+            "success" => true,
             "queue" => $queue,
         ]);
     }

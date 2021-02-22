@@ -23,7 +23,7 @@ class CreateUsersTable extends Migration
             $table->string('password')->nullable();
             $table->string('status')->default('UNVERIFIED');
             $table->string('gender')->nullable();
-            $table->longtext('IC_image')->nullable();
+            $table->longtext('IC_image')->default("images/default_profile_picture.png");
             $table->longtext('selfie')->nullable();
             $table->string('telephone')->nullable();
             $table->string('role');

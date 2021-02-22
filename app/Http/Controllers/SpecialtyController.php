@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Specialty;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 
 class SpecialtyController extends Controller
 {
@@ -32,6 +33,9 @@ class SpecialtyController extends Controller
     public function getSpecialtiesView()
     {
         $specialties = Specialty::where("specialty", "not like", "Pharmacist")
+            ->whereHas("user", function(Builder $query){
+                $query->where('status', 'VERIFIED');
+            })
             ->pluck("specialty")
             ->unique();
 

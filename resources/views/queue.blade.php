@@ -64,14 +64,14 @@
                                 <div class="mb-3">
                                     <label for="exampleFormControlInput1" class="form-label">Patient Gender</label>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="Male"
+                                        <input class="form-check-input" type="radio" id="Male"
                                             value="Male" name="gender" checked>
                                         <label class="form-check-label" for="flexRadioDefault1">
                                             Male
                                         </label>
                                     </div>
                                     <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="flexRadioDefault" id="Female"
+                                        <input class="form-check-input" type="radio" id="Female"
                                             name="gender" value="Female">
                                         <label class="form-check-label" for="flexRadioDefault2">
                                             Female
@@ -89,6 +89,7 @@
                             <label for="exampleFormControlInput1" class="form-label">Patient Concern (Optional)</label>
                             <textarea type="text" class="form-control" id="concern" name="concern"></textarea>
                         </div>
+                        <input type="hidden" name="patientId" id="patientId">
                         <div class=" d-flex justify-content-end">
                             <button type="submit" class="btn btn-primary">Create Queue</button>
                         </div>
@@ -104,11 +105,12 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="staticBackdropLabel">Queue is Created Successfully!</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="ticket">
                     <h4 class="text-center">Queue Number</h4>
                     <h1 class="text-center" id="queueNo">
+                    <h5 class="text-center" id="queueSpecialty">
+                    <h5 class="text-center" id="queueLocation">
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="printElem('ticket')">Print Ticket</button>
@@ -127,44 +129,47 @@
         var homeAddress = document.getElementById("homeAddress");
         if (IC == '') {
             alert('Please enter an IC number before searching')
-        }
-        var xhttp = new XMLHttpRequest();
-        xhttp.onreadystatechange = function() {
-            if (this.readyState == 4 && this.status == 200) {
-                var patient = JSON.parse(this.responseText).patient;
-                if (patient == null) {
-                    alert('Patient not found!');
-                    firstName.value = null;
-                    lastName.value = null;
-                    telephone.value = null;
-                    homeAddress.value = null;
-                    $("input[name=gender][value=Male]").prop('checked', true);
+        } else {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    var patient = JSON.parse(this.responseText).patient;
+                    if (patient == null) {
+                        $("#patientId").val(null);
+                        alert('Patient not found!');
+                        firstName.value = null;
+                        lastName.value = null;
+                        telephone.value = null;
+                        homeAddress.value = null;
+                        $("input[name=gender][value=Male]").prop('checked', true);
 
-                    firstName.disabled = false;
-                    lastName.disabled = false;
-                    telephone.disabled = false;
-                    homeAddress.disabled = false;
-                    document.getElementById('Male').disabled = false;
-                    document.getElementById('Female').disabled = false;
-                } else {
-                    firstName.value = patient.first_name;
-                    lastName.value = patient.last_name;
-                    telephone.value = patient.telephone;
-                    homeAddress.value = patient.home_address;
-                    $("input[name=gender][value=" + patient.gender + "]").prop('checked', true);
+                        firstName.disabled = false;
+                        lastName.disabled = false;
+                        telephone.disabled = false;
+                        homeAddress.disabled = false;
+                        document.getElementById('Male').disabled = false;
+                        document.getElementById('Female').disabled = false;
+                    } else {
+                        $("#patientId").val(patient.id);
+                        firstName.value = patient.first_name;
+                        lastName.value = patient.last_name;
+                        telephone.value = patient.telephone;
+                        homeAddress.value = patient.home_address;
+                        $("input[name=gender][value=" + patient.gender + "]").prop('checked', true);
 
-                    firstName.disabled = true;
-                    lastName.disabled = true;
-                    telephone.disabled = true;
-                    homeAddress.disabled = true;
+                        firstName.disabled = true;
+                        lastName.disabled = true;
+                        telephone.disabled = true;
+                        homeAddress.disabled = true;
 
-                    document.getElementById('Male').disabled = true;
-                    document.getElementById('Female').disabled = true;
+                        document.getElementById('Male').disabled = true;
+                        document.getElementById('Female').disabled = true;
+                    }
                 }
-            }
-        };
-        xhttp.open("GET", "./getUserWithIC/" + IC, true);
-        xhttp.send();
+            };
+            xhttp.open("GET", "./getUserWithIC/" + IC, true);
+            xhttp.send();
+        }
     }
 
     $("#queueForm").submit(function(e) {
@@ -179,13 +184,20 @@
             url: url,
             data: $("form").serialize(),
             success: function(data) {
-                $("#queueNoModal").modal("show");
-                document.getElementById("queueNo").innerHTML = data.queue.queue_no
+                if (data.success) {
+                    $("#queueNoModal").modal("show");
+                    document.getElementById("queueNo").innerHTML = data.queue.queue_no;
+                    document.getElementById("queueSpecialty").innerHTML = data.queue.specialty;
+                    document.getElementById("queueLocation").innerHTML = data.queue.location;
+                } else {
+                    alert(Object.values(data.message).join("\n"));
+                }
             }
         });
     });
 
     function printElem(elem) {
+        $("#queueNoModal").hide();
         var mywindow = window.open('', 'PRINT', 'height=400,width=600');
 
         mywindow.document.write(document.getElementById(elem).innerHTML);
@@ -196,7 +208,7 @@
         mywindow.print();
         mywindow.close();
 
-        return true;
+        location.reload();
     }
 
 </script>

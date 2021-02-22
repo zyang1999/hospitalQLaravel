@@ -102,15 +102,12 @@ class UserController extends Controller
 
     public function register(Request $request)
     {
-        $validator = Validator::make(
-            $request->all(),
-            [
-                "email" => "required|unique:users|email",
-                "password" =>
-                    "required|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/|confirmed|",
-                "password_confirmation" => "required",
-            ],
-        );
+        $validator = Validator::make($request->all(), [
+            "email" => "required|unique:users|email",
+            "password" =>
+                "required|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/|confirmed|",
+            "password_confirmation" => "required",
+        ]);
         if ($validator->fails()) {
             return response()->json([
                 "success" => false,
@@ -575,16 +572,34 @@ class UserController extends Controller
         }
 
         $user = User::find($request->id);
+        if ($request->role == "ADMIN" || $request->role == "PATIENT") {
+            if ($user->role == "DOCTOR" || $user->role == "NURSE") {
+                $user->specialty->delete();
+            }
+        }
+
         $user->first_name = $request->firstName;
         $user->last_name = $request->lastName;
         $user->telephone = $request->telephone;
         $user->role = $request->role;
         $user->home_address = $request->homeAddress;
 
-        if ($request->role == "DOCTOR") {
+        if ($user->specialty == []) {
+            $specialty = new Specialty();
+        } else {
             $specialty = $user->specialty;
+        }
+        $specialty->doctor_id = $user->id;
+
+        if ($request->role == "DOCTOR") {
             $specialty->specialty = $request->specialty;
             $specialty->location = $request->location;
+            $specialty->save();
+        }
+
+        if ($request->role == "NURSE") {
+            $specialty->specialty = "Pharmacist";
+            $specialty->location = $request->counterNo;
             $specialty->save();
         }
 
