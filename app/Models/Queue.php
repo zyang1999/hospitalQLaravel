@@ -70,22 +70,31 @@ class Queue extends Model
             return Queue::where("specialty", $this->specialty)
                 ->where("location", $this->location)
                 ->where("status", "WAITING")
-                ->whereDate("created_at", Carbon::today())
+                ->where("created_at", ">", Carbon::today())
+                ->where("created_at", "<", $this->created_at)
                 ->count();
         }
 
         return $this->doctor
             ->staffQueues()
             ->where("status", "WAITING")
-            ->whereDate("created_at", Carbon::today())
+            ->where("created_at", ">", Carbon::today())
+            ->where("created_at", "<", $this->created_at)
             ->count();
     }
 
     public function getTimeRangeAttribute()
     {
-        $queue = $this->doctor->staffQueues->where('status', 'COMPLETED');
-        $numberOfPatients = $queue->count();
-        $averageWaitingTime = $queue->avg("waiting_time");
+        $averageWaitingTime = $this->doctor->staffQueues
+            ->where("status", "COMPLETED")
+            ->avg("waiting_time");
+        $numberOfPatients =
+            $this->doctor
+                ->staffQueues()
+                ->where("created_at", ">", Carbon::today())
+                ->where("created_at", "<", $this->created_at)
+                ->where("status", "WAITING")
+                ->count();
         $totalWaitingSeconds = $numberOfPatients * $averageWaitingTime;
         $currentTime = Carbon::now();
         $extimatedServedAt = $currentTime->addSeconds($totalWaitingSeconds);

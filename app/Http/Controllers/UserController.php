@@ -13,6 +13,7 @@ use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Builder;
 use App\Models\User;
 use App\Models\Specialty;
+use App\Models\AppointmentFeedback;
 use App\Services\Mail;
 use App\Services\FCMCloudMessaging;
 use Carbon\Carbon;
@@ -246,14 +247,18 @@ class UserController extends Controller
 
     public function getDoctorList(Request $request)
     {
-        $doctors = User::where("role", "DOCTOR")->get();
+        $doctors = User::where("role", "DOCTOR")
+            ->where("status", "VERIFIED")
+            ->get();
 
         if ($request->specialty != "All") {
             $doctors = User::whereHas("specialty", function (
                 Builder $query
             ) use ($request) {
                 $query->where("specialty", $request->specialty);
-            })->get();
+            })
+                ->where("status", "VERIFIED")
+                ->get();
         }
 
         return response()->json([
@@ -617,6 +622,45 @@ class UserController extends Controller
         $user->status = "INACTIVE";
         $user->save();
 
+        if ($user->role == "DOCTOR") {
+            $user
+                ->doctorAppointments()
+                ->where("status", "AVAILABLE")
+                ->delete();
+
+            $user
+                ->doctorAppointments()
+                ->where("status", "BOOKED")
+                ->get()
+                ->each(function ($appointment) use ($user) {
+                    $appointment->status = "CANCELLED";
+                    $appointment->save();
+
+                    $feedback = new AppointmentFeedback();
+                    $feedback->created_by = $user->id;
+                    $feedback->feedback =
+                        "This doctor is no longer working in the hospital.";
+                    $appointment->feedback()->save($feedback);
+
+                    $token = $appointment->patient->fcm_token;
+                    $title = "Appointment";
+                    $body =
+                        "Your appointment is cancelled as the doctor is no longer working in the hospital.";
+                    $data = [
+                        "tab" => "HistoryStack",
+                        "screen" => "AppointmentDetails",
+                        "appointmentId" => $appointment->id,
+                    ];
+
+                    $this->FCMCloudMessaging->sendFCM(
+                        $token,
+                        $title,
+                        $body,
+                        $data
+                    );
+                });
+        }
+
         return response()->json([
             "message" => "This account is set as inactive!",
         ]);
@@ -628,7 +672,9 @@ class UserController extends Controller
             $request
         ) {
             $query->where("specialty", $request->specialty);
-        })->get();
+        })
+            ->where("status", "VERIFIED")
+            ->get();
 
         return view("/components/doctor-select", ["doctors" => $doctors]);
     }

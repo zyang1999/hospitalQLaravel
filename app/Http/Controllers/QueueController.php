@@ -25,6 +25,9 @@ class QueueController extends Controller
     public function joinQueue(Request $request)
     {
         $doctorId = Specialty::where("specialty", $request->specialty)
+            ->whereHas("user", function ($query) {
+                $query->where("status", "VERIFIED");
+            })
             ->get()
             ->sortBy(function ($queue) {
                 return count($queue->user->staffQueues);
@@ -32,8 +35,38 @@ class QueueController extends Controller
             ->pluck("user.id")
             ->values()
             ->all();
+        $index = 0;
+        do {
+            if ($index == count($doctorId)) {
+                return $doctor = User::find($doctorId[0]);
+            }
+            $doctor = User::find($doctorId[$index]);
 
-        $doctor = User::find($doctorId[0]);
+            $averageWaitingTime = $doctor->staffQueues
+                ->where("status", "COMPLETED")
+                ->avg("waiting_time");
+            $numberOfPatients = $doctor
+                ->staffQueues()
+                ->whereDate("created_at", Carbon::today())
+                ->where("status", "WAITING")
+                ->count();
+            $totalWaitingSeconds = $numberOfPatients * $averageWaitingTime;
+            $currentTime = Carbon::now();
+            $extimatedServedAt = $currentTime->addSeconds($totalWaitingSeconds);
+
+            $crashed = $doctor
+                ->doctorAppointments()
+                ->whereDate("date", Carbon::today())
+                ->where("start_at", ">=", $extimatedServedAt->toTimeString())
+                ->where(
+                    "start_at",
+                    "<=",
+                    $extimatedServedAt->addMinutes(15)->toTimeString()
+                )
+                ->first();
+            $index++;
+        } while ($crashed != null);
+
         $location = $doctor->specialty->location;
 
         $queue = new Queue();
@@ -69,6 +102,7 @@ class QueueController extends Controller
 
         return response()->json([
             "queue" => $queue,
+            "extimatedServedAt" => $extimatedServedAt,
         ]);
     }
 
@@ -415,7 +449,7 @@ class QueueController extends Controller
                 "status" => "VERIFIED",
                 "role" => "PATIENT",
             ]);
-        }else{
+        } else {
             $user = User::find($request->patientId);
         }
 

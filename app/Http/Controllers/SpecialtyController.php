@@ -11,18 +11,18 @@ class SpecialtyController extends Controller
 {
     public function getSpecialties(Request $request)
     {
-        if ($request->user()->specialty) {
-            $specialties = $request->user()->specialty->get();
-        } else {
-            $specialties = Specialty::all()
-                ->unique("specialty")
-                ->values()
-                ->all();
-            if ($request->doctorId != "All") {
-                $specialties = User::find($request->doctorId)
-                    ->specialty()
-                    ->get();
-            }
+        $specialties = Specialty::whereHas("user", function ($query) {
+            $query->where("status", "VERIFIED");
+        })
+            ->get()
+            ->unique("specialty")
+            ->values()
+            ->all();
+
+        if ($request->doctorId != "All") {
+            $specialties = User::find($request->doctorId)
+                ->specialty()
+                ->get();
         }
 
         return response()->json([
@@ -33,8 +33,8 @@ class SpecialtyController extends Controller
     public function getSpecialtiesView()
     {
         $specialties = Specialty::where("specialty", "not like", "Pharmacist")
-            ->whereHas("user", function(Builder $query){
-                $query->where('status', 'VERIFIED');
+            ->whereHas("user", function (Builder $query) {
+                $query->where("status", "VERIFIED");
             })
             ->pluck("specialty")
             ->unique();

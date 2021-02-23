@@ -247,7 +247,9 @@ class AppointmentController extends Controller
         $specialties = Specialty::where("specialty", "not like", "Pharmacist")
             ->pluck("specialty")
             ->unique();
-        $doctors = User::where("role", "DOCTOR")->get();
+        $doctors = User::where("role", "DOCTOR")
+            ->where("status", "VERIFIED")
+            ->get();
 
         return view("appointment", [
             "specialties" => $specialties,
