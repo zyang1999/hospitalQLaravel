@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Appointment;
 use App\Models\AppointmentFeedback;
 use App\Models\Specialty;
+use App\Models\Queue;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
@@ -80,6 +81,63 @@ class AppointmentController extends Controller
         $appointment = Appointment::find($request->id);
         $appointment->status = "COMPLETED";
         $appointment->save();
+
+        $counterNo = Specialty::where("specialty", "Pharmacist")
+            ->pluck("location")
+            ->unique()
+            ->sortBy(function ($location) {
+                return Queue::where("specialty", "Pharmacist")
+                    ->where("location", $location)
+                    ->count();
+            })
+            ->values()
+            ->first();
+
+        $queue = new Queue();
+        $queue_no =
+            (int) Queue::where("specialty", "Pharmacist")
+                ->whereDate("created_at", Carbon::today())
+                ->max("queue_no") + 1;
+        $queue->queue_no = sprintf("%04d", $queue_no);
+        $queue->status = "WAITING";
+        $queue->specialty = "Pharmacist";
+        $queue->location = $counterNo;
+        $queue->user_id = $appointment->patient_id;
+        $queue->save();
+
+        $token = User::whereHas("specialty", function ($query) use (
+            $counterNo
+        ) {
+            $query
+                ->where("specialty", "Pharmacist")
+                ->where("location", $counterNo);
+        })
+            ->where("status", "VERIFIED")
+            ->whereNotNull("fcm_token")
+            ->pluck("fcm_token")
+            ->toArray();
+        $title = "Queue Status";
+        $body = $queue->patient->full_name . " has joined the queue";
+        $data = [
+            "route" => "Staff",
+            "type" => "nurseRefreshQueue",
+        ];
+
+        $this->FCMCloudMessaging->sendFCM($token, $title, $body, $data);
+
+        $token = User::where("role", "PATIENT")
+            ->where("status", "VERIFIED")
+            ->whereNotNull("fcm_token")
+            ->pluck("fcm_token")
+            ->toArray();
+
+        $title = "Queue Updated";
+        $body = "Queue has refreshed";
+        $data = [
+            "route" => "Patient",
+            "type" => "refreshQueue",
+        ];
+        $this->FCMCloudMessaging->sendFCM($token, $title, $body, $data);
 
         return response()->json([
             "success" => true,

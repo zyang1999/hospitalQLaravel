@@ -103,6 +103,7 @@ class QueueController extends Controller
         return response()->json([
             "queue" => $queue,
             "extimatedServedAt" => $extimatedServedAt,
+            "asd" => $doctor->fcm_token
         ]);
     }
 
@@ -117,12 +118,15 @@ class QueueController extends Controller
             $prevQueue->status = "COMPLETED";
             $prevQueue->save();
             if ($role == "DOCTOR") {
-                $counterNo = Queue::whereDate("created_at", Carbon::today())
-                    ->where("specialty", "Pharmacist")
+                $counterNo = Specialty::where("specialty", "Pharmacist")
                     ->pluck("location")
-                    ->countBy()
-                    ->sort()
-                    ->keys()
+                    ->unique()
+                    ->sortBy(function ($location) {
+                        return Queue::where("specialty", "Pharmacist")
+                            ->where("location", $location)
+                            ->count();
+                    })
+                    ->values()
                     ->first();
 
                 $queue = new Queue();
@@ -136,6 +140,26 @@ class QueueController extends Controller
                 $queue->location = $counterNo;
                 $queue->user_id = $prevQueue->user_id;
                 $queue->save();
+
+                $token = User::whereHas("specialty", function ($query) use (
+                    $counterNo
+                ) {
+                    $query
+                        ->where("specialty", "Pharmacist")
+                        ->where("location", $counterNo);
+                })
+                    ->where("status", "VERIFIED")
+                    ->whereNotNull("fcm_token")
+                    ->pluck("fcm_token")
+                    ->toArray();
+                $title = "Queue Status";
+                $body = $queue->patient->full_name . " has joined the queue";
+                $data = [
+                    "route" => "Staff",
+                    "type" => "nurseRefreshQueue",
+                ];
+
+                $this->FCMCloudMessaging->sendFCM($token, $title, $body, $data);
             }
         }
 
@@ -144,8 +168,12 @@ class QueueController extends Controller
                 ->user()
                 ->getDoctorPendingQueues()
                 ->where("status", "WAITING")
-                ->first()
-                ->makeHidden("doctor");
+                ->first();
+
+            if ($nextQueue != null) {
+                $nextQueue->makeHidden("doctor");
+            }
+
             $nextPatient = $request
                 ->user()
                 ->getDoctorPendingQueues()
@@ -158,8 +186,12 @@ class QueueController extends Controller
                 ->user()
                 ->getNursePendingQueues()
                 ->where("status", "WAITING")
-                ->first()
-                ->makeHidden("doctor");
+                ->first();
+
+            if ($nextQueue != null) {
+                $nextQueue->makeHidden("doctor");
+            }
+
             $nextPatient = $request
                 ->user()
                 ->getNursePendingQueues()
@@ -203,13 +235,23 @@ class QueueController extends Controller
                 "type" => "refreshQueue",
             ];
 
-            $this->FCMCloudMessaging->sendFCM(
-                $nextPatientToken,
-                $title,
-                $body,
-                $data
-            );
+            $this->FCMCloudMessaging->sendFCM($token, $title, $body, $data);
         }
+
+        $token = User::where("role", "PATIENT")
+            ->where("status", "VERIFIED")
+            ->whereNotNull("fcm_token")
+            ->pluck("fcm_token")
+            ->toArray();
+
+        $title = "Queue Updated";
+        $body = "Queue has refreshed";
+        $data = [
+            "route" => "Patient",
+            "type" => "refreshQueue",
+        ];
+
+        $this->FCMCloudMessaging->sendFCM($token, $title, $body, $data);
 
         return response()->json([
             "prev_queue" => $prevQueue,
@@ -223,6 +265,17 @@ class QueueController extends Controller
         $currentQueue->status = "COMPLETED";
         $currentQueue->save();
         if ($request->user()->role == "DOCTOR") {
+            $counterNo = Specialty::where("specialty", "Pharmacist")
+                ->pluck("location")
+                ->unique()
+                ->sortBy(function ($location) {
+                    return Queue::where("specialty", "Pharmacist")
+                        ->where("location", $location)
+                        ->count();
+                })
+                ->values()
+                ->first();
+
             $queue = new Queue();
             $queue_no =
                 (int) Queue::where("specialty", "Pharmacist")
@@ -231,9 +284,44 @@ class QueueController extends Controller
             $queue->queue_no = sprintf("%04d", $queue_no);
             $queue->status = "WAITING";
             $queue->specialty = "Pharmacist";
+            $queue->location = $counterNo;
             $queue->user_id = $currentQueue->user_id;
             $queue->save();
+
+            $token = User::whereHas("specialty", function ($query) use (
+                $counterNo
+            ) {
+                $query
+                    ->where("specialty", "Pharmacist")
+                    ->where("location", $counterNo);
+            })
+                ->where("status", "VERIFIED")
+                ->whereNotNull("fcm_token")
+                ->pluck("fcm_token")
+                ->toArray();
+            $title = "Queue Status";
+            $body = $queue->patient->full_name . " has joined the queue";
+            $data = [
+                "route" => "Staff",
+                "type" => "nurseRefreshQueue",
+            ];
+
+            $this->FCMCloudMessaging->sendFCM($token, $title, $body, $data);
         }
+
+        $token = User::where("role", "PATIENT")
+            ->where("status", "VERIFIED")
+            ->whereNotNull("fcm_token")
+            ->pluck("fcm_token")
+            ->toArray();
+
+        $title = "Queue Updated";
+        $body = "Queue has refreshed";
+        $data = [
+            "route" => "Patient",
+            "type" => "refreshQueue",
+        ];
+        $this->FCMCloudMessaging->sendFCM($token, $title, $body, $data);
 
         return response()->json([
             "currentQueue" => $currentQueue,
@@ -254,7 +342,7 @@ class QueueController extends Controller
             $userQueue->append("time_range", "number_of_patients");
         }
         return response()->json([
-            "user" => $request->user(),
+            "user" => $request->user()->only("full_name", "selfie_string"),
             "userQueue" => $userQueue,
         ]);
     }
@@ -343,6 +431,15 @@ class QueueController extends Controller
             return response()->json([
                 "success" => false,
                 "message" => $validator->messages(),
+            ]);
+        }
+
+        if (str_word_count($request->feedback) < 5) {
+            return response()->json([
+                "success" => false,
+                "message" => [
+                    "feedback" => "Minimum 5 words.",
+                ],
             ]);
         }
 

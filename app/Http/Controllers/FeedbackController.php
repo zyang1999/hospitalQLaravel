@@ -14,25 +14,24 @@ class FeedbackController extends Controller
         $message = null;
         $validator = Validator::make($request->all(), [
             "queueId" => "required",
-            "feedback" => "required",
+            "feedback" => "required|min: ",
         ]);
 
         if ($validator->fails()) {
-            $message = [
+            return response()->json([
                 "success" => false,
                 "message" => $validator->messages(),
-            ];
-        } else {
-            $queue = Queue::find($request->queueId);
-
-            $feedback = new Feedback();
-            $feedback->feedback = $request->feedback;
-            $feedback->created_by = $request->user()->id;
-            $queue->feedback()->save($feedback);
-            $message = [
-                "success" => true,
-            ];
+            ]);
         }
-        return response()->json($message);
+
+        $queue = Queue::find($request->queueId);
+        $feedback = new Feedback();
+        $feedback->feedback = $request->feedback;
+        $feedback->created_by = $request->user()->id;
+        $queue->feedback()->save($feedback);
+
+        return response()->json([
+            "success" => true,
+        ]);
     }
 }

@@ -14,6 +14,7 @@ class SpecialtyController extends Controller
         $specialties = Specialty::whereHas("user", function ($query) {
             $query->where("status", "VERIFIED");
         })
+            ->where("specialty", "not like", "Pharmacist")
             ->get()
             ->unique("specialty")
             ->values()
@@ -40,5 +41,20 @@ class SpecialtyController extends Controller
             ->unique();
 
         return view("queue", ["specialties" => $specialties]);
+    }
+
+    public function getQrCodeVIew()
+    {
+        $specialties = Specialty::where("specialty", "not like", "Pharmacist")
+            ->whereHas("user", function (Builder $query) {
+                $query->where("status", "VERIFIED");
+            })
+            ->pluck("specialty")
+            ->unique();
+
+        return view("qr_code", [
+            "specialties" => $specialties,
+            "url" => config("app.url"),
+        ]);
     }
 }

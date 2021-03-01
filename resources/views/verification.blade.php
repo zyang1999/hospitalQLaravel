@@ -60,6 +60,7 @@
                     <div class="modal-body">
                         <img id="selfie" class="img-thumbnail w-auto">
                         <img id="IC_image" class="img-thumbnail w-auto">
+                        <img id="IC_image_back" class="img-thumbnail w-auto">
                         <div class="row align-items-start">
                             <div class="col">
                                 <label for="recipient-name" class="col-form-label">First Name:</label>
@@ -136,6 +137,7 @@
         var modalBody = exampleModal.querySelector('.modal-body')
         var selfie = document.getElementById("selfie");
         var IC_image = document.getElementById("IC_image");
+        var IC_image_back = document.getElementById("IC_image_back");
         var firstName = document.getElementById("first-name")
         var lastName = document.getElementById("last-name")
         var email = document.getElementById("email")
@@ -154,6 +156,7 @@
                 var response = JSON.parse(this.responseText).user;
                 selfie.setAttribute('src', response.selfie)
                 IC_image.setAttribute('src', response.IC_image)
+                IC_image_back.setAttribute('src', response.IC_image_back)
                 firstName.value = response.first_name;
                 lastName.value = response.last_name;
                 email.value = response.email;

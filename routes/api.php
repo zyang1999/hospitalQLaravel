@@ -9,7 +9,8 @@ use App\Http\Controllers\SpecialtyController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AppointmentFeedbackController;
 use Illuminate\Database\Eloquent\Builder;
-use App\Models\User;
+use App\Models\Specialty;
+use App\Models\Queue;
 use Carbon\Carbon;
 /*
 |--------------------------------------------------------------------------
@@ -78,10 +79,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::get('/getQueueCount', function () {
-    $request = "Family Physician";
-    return User::whereHas("specialty", function (Builder $query) use ($request) {
-        $query->where("specialty", $request);
-    })->get()->sortBy(function ($doctor){
-        return count($doctor->staffQueues()->whereDate("created_at", Carbon::today())->get());
-    });
+    return Specialty::where("specialty", "Pharmacist")->pluck('location')->unique()->sortBy(function ($location){
+        return Queue::where("specialty", "Pharmacist")->where("location", $location)->count();
+    })->values()->first();
 });

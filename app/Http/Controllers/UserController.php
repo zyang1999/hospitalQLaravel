@@ -164,7 +164,8 @@ class UserController extends Controller
             "IC_no.unique" =>
                 "This IC Number is already registered. If this is your IC number, you may ask our admin to create an account for you.",
             "IC_no.digits_between" => "The IC Number must be 12 digits",
-            "IC_image.required" => "The IC Image is required.",
+            "IC_image.required" => "The IC image is required.",
+            "IC_image_back.required" => "The back of IC image is required.",
         ];
 
         $validator = Validator::make(
@@ -177,6 +178,7 @@ class UserController extends Controller
                 "homeAddress" => "required",
                 "IC_no" => "required|unique:users|digits_between:12,12",
                 "IC_image" => "required",
+                "IC_image_back" => "required",
             ],
             $message
         );
@@ -191,6 +193,10 @@ class UserController extends Controller
             $imageDirectory = "images/" . date("mdYHis") . uniqid() . ".png";
             Storage::put($imageDirectory, $IC_image);
 
+            $IC_image_back = base64_decode($request->IC_image_back);
+            $imageDirectoryBack = "images/" . date("mdYHis") . uniqid() . ".png";
+            Storage::put($imageDirectoryBack, $IC_image_back);
+
             $user->first_name = $request->first_name;
             $user->last_name = $request->last_name;
             $user->telephone = $request->telephone;
@@ -198,7 +204,7 @@ class UserController extends Controller
             $user->home_address = $request->homeAddress;
             $user->IC_no = $request->IC_no;
             $user->IC_image = $imageDirectory;
-
+            $user->IC_image_back= $imageDirectoryBack;
             $user->save();
 
             return response()->json([
@@ -588,6 +594,10 @@ class UserController extends Controller
         $user->telephone = $request->telephone;
         $user->role = $request->role;
         $user->home_address = $request->homeAddress;
+        if($request->image != "undefined"){
+            $path = $request->image->store("images");
+            $user->selfie = $path;
+        }
 
         if ($user->specialty == []) {
             $specialty = new Specialty();

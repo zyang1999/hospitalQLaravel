@@ -65,6 +65,10 @@
                         </div>
                         <div class="modal-body">
                             <img class="img-thumbnail">
+                            <div class="mb-3">
+                                <label for="formFile" class="form-label">Edit Profile Picture (Optional)</label>
+                                <input class="form-control" type="file" id="newProfilePicture" accept="image/*">
+                            </div>
                             <div class="row align-items-start">
                                 <div class="col">
                                     <label for="recipient-name" class="col-form-label">First Name:</label>
@@ -432,6 +436,8 @@
         e.preventDefault();
 
         var formData = new FormData(this);
+        var image = $('#newProfilePicture')[0].files[0];
+        formData.append('image', image);
         formData.append('_token', '{{ csrf_token() }}');
 
         $.ajax({

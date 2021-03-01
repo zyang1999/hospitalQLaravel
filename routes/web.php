@@ -50,6 +50,7 @@ Route::middleware(['auth'])->group(function () {
     })
     ->name('password');
     Route::get('/changePassword', [UserController::class, 'changePasswordWeb']);
+    Route::get('/qrCode', [SpecialtyController::class, "getQrCodeView"])->name("qrCode");
 });
 
 Route::get('/verifyEmail/{token}',[UserController::class, 'verifyEmail']);
